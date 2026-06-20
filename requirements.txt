@@ -1,5 +1,6 @@
 # Browser Automation
 playwright==1.52.0
+playwright-stealth==1.0.6
 
 # AI
 google-generativeai==0.8.5
