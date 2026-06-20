@@ -66,8 +66,8 @@ def main():
         from core.headline_rotator import get_next_headline, update_headline_on_naukri
         from core.resume_generator import upload_resume_to_naukri
         from config.settings import OUTPUT_DIR, NAUKRI_PROFILE_URL
-        import asyncio
         
+
         async def push_test():
             async with async_playwright() as p:
                 browser, context = await get_authenticated_context(p)
