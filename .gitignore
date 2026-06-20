@@ -1,0 +1,25 @@
+# Environment
+.env
+venv/
+
+# Session & Auth
+session_state/
+
+# Generated output
+output/resumes/
+logs/
+
+# Debug files
+*.png
+naukri_dump.html
+
+# Python
+__pycache__/
+*.pyc
+
+# Database (local copy)
+career_optimizer.db
+
+# IDE
+.vscode/
+.idea/

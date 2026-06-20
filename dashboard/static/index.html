@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Optimizer</title>
+    <!-- Modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ── 📱 Mobile First Layout (Default) ── */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            /* Stacks vertically on mobile */
+            min-height: 100vh;
+            /* Cool subtle gradient background */
+            background-image: radial-gradient(circle at top left, rgba(56, 189, 248, 0.1), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.1), transparent 40%);
+        }
+
+        .sidebar {
+            width: 100%;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: row;
+            /* Horizontal scroll menu on mobile */
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Hide scrollbar for clean mobile look */
+        .nav-menu::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+            /* Keeps text on one line */
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1rem;
+            /* Smaller padding for mobile screens */
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            /* Stack Title and Button on mobile */
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            /* 1 column on mobile */
+            gap: 1rem;
+            margin-top: -1rem;
+        }
+
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand i {
+            color: var(--accent);
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+        }
+
+        /* ── Action Buttons ── */
+        .btn-trigger {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-trigger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+        }
+
+        /* ── Dashboard Cards ── */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+
+        .skill-badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin: 0.25rem 0.25rem 0 0;
+            transition: transform 0.2s;
+        }
+
+        .skill-badge:hover {
+            transform: scale(1.05);
+            background: rgba(56, 189, 248, 0.25);
+        }
+
+        .info-card h3 {
+            margin-bottom: 1rem;
+            color: white;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-text {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Job Cards ── */
+        .job-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .job-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .job-title {
+            font-size: 1.2rem;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+        }
+
+        .job-company {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .match-score {
+            font-weight: 800;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        .job-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .btn-apply {
+            background: var(--accent);
+            color: #0f172a;
+            text-decoration: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 800;
+            display: inline-block;
+            transition: opacity 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-apply:hover {
+            opacity: 0.9;
+        }
+
+        /* ── Forms ── */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+
+        /* ── 💻 Desktop Override (min-width 768px) ── */
+        @media (min-width: 768px) {
+            body {
+                flex-direction: row;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            .sidebar {
+                width: 280px;
+                height: 100vh;
+                border-right: 1px solid var(--glass-border);
+                border-bottom: none;
+                flex-direction: column;
+                gap: 2rem;
+                padding: 2rem;
+            }
+
+            .nav-menu {
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 3rem;
+                overflow-y: auto;
+            }
+
+            .header {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 2rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .profile-grid {
+                grid-template-columns: 1fr 1fr;
+                /* 2 columns on desktop */
+                gap: 1.5rem;
+                margin-top: -1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="brand">
+            <i class="fa-solid fa-rocket"></i> Career AI
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="showView('overview')"><i class="fa-solid fa-chart-pie"></i> Overview
+            </div>
+            <div class="nav-item" onclick="showView('jobs')"><i class="fa-solid fa-fire"></i> Hot Jobs</div>
+            <div class="nav-item" onclick="showView('suggestions')"><i class="fa-solid fa-lightbulb"></i> AI Suggestions
+            </div>
+            <div class="nav-item" onclick="showView('resume')"><i class="fa-solid fa-file-pdf"></i> Resume Builder</div>
+            <div class="nav-item" onclick="showView('logs')"><i class="fa-solid fa-terminal"></i> System Logs</div>
+        </div>
+    </nav>
+
+    <!-- Main Dynamic Content -->
+    <main class="main-content">
+        <div class="header">
+            <h1 id="page-title">Profile Overview</h1>
+            <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                <button class="btn-trigger" id="btn-edit-yaml" onclick="openRawEditor()"
+                    style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-main); height: 42px;"><i
+                        class="fa-solid fa-code"></i> Edit Raw YAML</button>
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <button class="btn-trigger" onclick="triggerAutomation()" id="btn-run-automation"
+                        style="height: 42px;">
+                        <i class="fa-solid fa-play"></i> Run Automation
+                    </button>
+                    <small id="schedule-text"
+                        style="color: var(--text-muted); font-size: 0.75rem; margin-top: 6px;"></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Placeholder where JS will inject our data -->
+        <div id="content-area" class="glass-card">
+            <p style="color: var(--text-muted);">Loading system data...</p>
+        </div>
+    </main>
+
+    <!-- Basic Navigation Logic -->
+    <script>
+        function showView(viewId) {
+            // Update active state in sidebar
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+                if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(`showView('${viewId}')`)) {
+                    el.classList.add('active');
+                }
+            });
+
+            const contentArea = document.getElementById('content-area');
+            const pageTitle = document.getElementById('page-title');
+
+            const btnEditYaml = document.getElementById('btn-edit-yaml');
+
+            if (viewId === 'overview') {
+                pageTitle.innerText = "Profile Overview";
+                btnEditYaml.style.display = "flex";
+                contentArea.className = "glass-card"; // Reset wrapper state
+                contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching profile from backend...</p>";
+
+                fetchOverviewData();
+            } else if (viewId === 'jobs') {
+                pageTitle.innerText = "Hot Job Feed";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "glass-card";
+                contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching jobs from database...</p>";
+
+                fetchJobsData();
+            } else if (viewId === 'suggestions') {
+                pageTitle.innerText = "AI Profile Suggestions";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "glass-card";
+                contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching pending suggestions...</p>";
+
+                fetchSuggestionsData();
+            } else if (viewId === 'resume') {
+                pageTitle.innerText = "Resume Builder & AI Enhancer";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "";
+
+                contentArea.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+                        
+                        <!-- AI Smart Add Section -->
+                        <div class="glass-card" style="border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 4px 30px rgba(168, 85, 247, 0.1);">
+                            <h2 style="margin-bottom: 1rem;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i> AI Profile Smart Add</h2>
+                            <p class="info-text" style="margin-bottom: 1.5rem;">Explain your experience in layman's terms. Gemini will use the "Action-What-How-Effect" framework and invent realistic metrics to create a highly professional entry.</p>
+                            
+                            <form onsubmit="submitSmartAdd(event)">
+                                <div class="form-group">
+                                    <label class="form-label">What are you adding?</label>
+                                    <select id="smart-add-type" class="form-select" onchange="updateSmartAddFields()">
+                                        <option value="project">Project</option>
+                                        <option value="experience">Experience / Internship</option>
+                                        <option value="achievement">Achievement / Certification</option>
+                                        <option value="extra_curricular">Leadership / Extra-Curricular</option>
+                                    </select>
+                                </div>
+
+                                <!-- Dynamic Fields -->
+                                <div id="fields-project" style="display: block;">
+                                    <div class="form-group"><label class="form-label">Project Name</label><input type="text" id="p_title" class="form-input"></div>
+                                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <div class="form-group" style="flex: 1; min-width: 200px;"><label class="form-label">GitHub Link (Optional)</label><input type="text" id="p_github" class="form-input"></div>
+                                        <div class="form-group" style="flex: 1; min-width: 200px;"><label class="form-label">Live Demo (Optional)</label><input type="text" id="p_live" class="form-input"></div>
+                                    </div>
+                                </div>
+
+                                <div id="fields-experience" style="display: none;">
+                                    <div class="form-group"><label class="form-label">Role Title</label><input type="text" id="e_title" class="form-input"></div>
+                                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <div class="form-group" style="flex: 1; min-width: 200px;"><label class="form-label">Company</label><input type="text" id="e_company" class="form-input"></div>
+                                        <div class="form-group" style="flex: 1; min-width: 200px;"><label class="form-label">Duration (e.g. Jan 2024 - Present)</label><input type="text" id="e_duration" class="form-input"></div>
+                                    </div>
+                                </div>
+
+                                <div id="fields-achievement" style="display: none;">
+                                    <div class="form-group"><label class="form-label">Verification Link (Optional)</label><input type="text" id="a_link" class="form-input"></div>
+                                </div>
+
+                                <div id="fields-extra-curricular" style="display: none;">
+                                    <div class="form-group">
+                                        <label class="form-label">Role Title</label>
+                                        <input type="text" id="ec_role" class="form-input" placeholder="e.g. Escort Leader">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Organization / Event Name</label>
+                                        <input type="text" id="ec_org" class="form-input" placeholder="e.g. Barclays Placement Series 2025">
+                                    </div>
+                                </div>
+
+
+                                <!-- The Magic Input -->
+                                <div class="form-group">
+                                    <label class="form-label">Explain what you did (Layman's terms)</label>
+                                    <textarea id="raw_text" class="form-textarea" placeholder="I built a react app that helps users track tasks. It used firebase for the database and I fixed a lot of bugs. It became pretty popular at my college..." required></textarea>
+                                </div>
+
+                                <button type="submit" id="smart-add-btn" class="btn-trigger" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem; background: linear-gradient(135deg, #a855f7, #c084fc);"><i class="fa-solid fa-wand-magic-sparkles"></i> Enhance & Save to Profile</button>
+                            </form>
+                        </div>
+
+                                                <!-- JD Tailored Resume Generator -->
+                        <div class="glass-card" style="border-color: rgba(244, 63, 94, 0.4); box-shadow: 0 4px 30px rgba(244, 63, 94, 0.1);">
+                            <h2 style="margin-bottom: 1rem;"><i class="fa-solid fa-file-pdf" style="color: #f43f5e;"></i> Tailor Resume to Job Description</h2>
+                            <p class="info-text" style="margin-bottom: 1.5rem;">Paste a Job Description below. Gemini will rewrite your resume to perfectly match the keywords and requirements, then generate a new PDF.</p>
+                            
+                            <form onsubmit="generateJDPDF(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Job Description</label>
+                                    <textarea id="jd-text" class="form-textarea" placeholder="Paste the full job description here..." required></textarea>
+                                </div>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    <button type="submit" id="btn-generate-jd" class="btn-trigger" style="flex: 2; justify-content: center; background: linear-gradient(135deg, #f43f5e, #fb7185); min-width: 200px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate JD-Tailored PDF</button>
+                                    <button type="button" onclick="generateStandardPDF(this)" class="btn-trigger" style="flex: 1; justify-content: center; background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--glass-border); min-width: 200px;"><i class="fa-solid fa-file-export"></i> Quick General PDF</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                `;
+            } else if (viewId === 'logs') {
+                pageTitle.innerText = "System Logs";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "glass-card";
+                contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching system logs...</p>";
+                fetchLogsData();
+            }
+        }
+
+        async function triggerAutomation() {
+            if (!confirm("Are you sure you want to trigger a manual automation cycle? This will run in the background and might take a few minutes.")) return;
+
+            const btn = document.getElementById('btn-run-automation');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Triggering...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/trigger', { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    alert("Automation cycle started successfully in the background!");
+                } else {
+                    alert("Error triggering automation: " + result.error);
+                }
+            } catch (error) {
+                alert("Request failed: " + error.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchOverviewData() {
+            try {
+                const response = await fetch('/api/profile');
+                const profile = await response.json();
+
+                const contentArea = document.getElementById('content-area');
+
+                // 1. Build Skills Badges
+                const skills = profile.skills?.proven || [];
+                const skillsHTML = skills.map((s, index) => `<span class="skill-badge">${s} <i class="fa-solid fa-xmark" style="margin-left: 5px; cursor: pointer; color: var(--text-muted);" onclick="deleteProfileItem('skills.proven', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i></span>`).join('');
+
+                const learningSkills = profile.skills?.learning || [];
+                const learningHTML = learningSkills.map((s, index) => `<span class="skill-badge" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); color: #c084fc;">${s} <i class="fa-solid fa-xmark" style="margin-left: 5px; cursor: pointer; opacity: 0.7;" onclick="deleteProfileItem('skills.learning', ${index})" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"></i></span>`).join('');
+
+                // 2. Build Achievements
+                const achHTML = (profile.achievements || []).map((ach, index) => {
+                    const parsedAch = ach.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--accent); text-decoration: none;">$1 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem;"></i></a>');
+                    return `<li style="margin-bottom: 0.75rem; display: flex; align-items: flex-start; justify-content: space-between;">
+                        <span><i class="fa-solid fa-trophy" style="color: #fbbf24; margin-right: 0.75rem;"></i> ${parsedAch}</span>
+                        <i class="fa-solid fa-trash" style="color: var(--text-muted); cursor: pointer; margin-left: 1rem; transition: color 0.2s;" onclick="deleteProfileItem('achievements', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                    </li>`;
+                }).join('');
+
+                // 3. Preferences Extraction
+                const prefs = profile.preferences || {};
+                const locs = (prefs.preferred_locations || []).join(', ');
+
+                // 4. Build Experience Section
+                const expHTML = (profile.experience || []).map((exp, index) => `
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); position: relative;">
+                        <i class="fa-solid fa-trash" style="position: absolute; right: 0; top: 0; color: var(--text-muted); cursor: pointer; transition: color 0.2s;" onclick="deleteProfileItem('experience', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <h4 style="color: var(--accent); margin-bottom: 0.25rem; font-size: 1.1rem; padding-right: 2rem;">${exp.role} @ ${exp.company}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                            <i class="fa-regular fa-calendar"></i> ${exp.duration}
+                        </p>
+                        <ul style="list-style-position: outside; margin-left: 1rem; color: var(--text-muted); line-height: 1.6;">
+                            ${(exp.bullets || []).map(b => `<li style="margin-bottom: 0.5rem;">${parseMarkdown(b)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                // 5. Build Projects Section
+                const projHTML = (profile.projects || []).map((p, index) => `
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); position: relative;">
+                        <i class="fa-solid fa-trash" style="position: absolute; right: 0; top: 0; color: var(--text-muted); cursor: pointer; transition: color 0.2s;" onclick="deleteProfileItem('projects', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <h4 style="color: var(--accent); margin-bottom: 0.25rem; font-size: 1.1rem; padding-right: 2rem;">
+                            ${p.name} 
+                            ${p.github_link ? `<a href="${p.github_link}" target="_blank" style="color:var(--text-muted); margin-left:10px; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'"><i class="fa-brands fa-github"></i></a>` : ''}
+                            ${p.live_link ? `<a href="${p.live_link}" target="_blank" style="color:var(--text-muted); margin-left:5px; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'"><i class="fa-solid fa-external-link-alt"></i></a>` : ''}
+                        </h4>
+                        <p style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 0.95rem;">${parseMarkdown(p.description)}</p>
+                        <div style="margin-bottom: 0.75rem;">
+                            ${(p.tech || []).map(t => `<span class="skill-badge" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">${t}</span>`).join('')}
+                        </div>
+                        <ul style="list-style-position: outside; margin-left: 1rem; color: var(--text-muted); line-height: 1.6;">
+                            ${(p.bullets || []).map(b => `<li style="margin-bottom: 0.5rem;">${parseMarkdown(b)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                // 6. Build Education Section
+                const eduHTML = (profile.education || []).map((edu, index) => `
+                    <div style="margin-bottom: 1rem; position: relative;">
+                        <i class="fa-solid fa-trash" style="position: absolute; right: 0; top: 0; color: var(--text-muted); cursor: pointer; transition: color 0.2s;" onclick="deleteProfileItem('education', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <h4 style="color: var(--accent); margin-bottom: 0.25rem; padding-right: 2rem;">${edu.degree}</h4>
+                        <p style="color: var(--text-main); font-weight: 600;">${edu.institution}</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${edu.year}</p>
+                    </div>
+                `).join('');
+
+                // 7. Build Extra Curriculars Section
+                const extraHTML = (profile.extra_curriculars || []).map((extra, index) => `
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); position: relative;">
+                        <i class="fa-solid fa-trash" style="position: absolute; right: 0; top: 0; color: var(--text-muted); cursor: pointer; transition: color 0.2s;" onclick="deleteProfileItem('extra_curriculars', ${index})" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <h4 style="color: var(--accent); margin-bottom: 0.25rem; font-size: 1.1rem; padding-right: 2rem;">${extra.role}</h4>
+                        <p style="color: var(--text-main); font-weight: 600; margin-bottom: 0.75rem;">${extra.organization}</p>
+                        <ul style="list-style-position: outside; margin-left: 1rem; color: var(--text-muted); line-height: 1.6;">
+                            ${(extra.bullets || []).map(b => `<li style="margin-bottom: 0.5rem;">${parseMarkdown(b)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+
+
+                // Inject all sections into the dynamic grid layout
+                contentArea.innerHTML = `
+                    <div class="profile-grid">
+                        <!-- Left Column: Personal Info & Preferences -->
+                        <div class="glass-card info-card">
+                            <h3><i class="fa-solid fa-user"></i> ${profile.personal?.name || 'User'}</h3>
+                            <p class="info-text"><strong>Email:</strong> ${profile.personal?.email}</p>
+                            <p class="info-text"><strong>Location:</strong> ${profile.personal?.location}</p>
+                            <p class="info-text"><strong>Level Target:</strong> ${profile.personal?.experience_keyword || 'Entry-Level'}</p>
+                            
+                            <!-- Career Preferences -->
+                            <h3 style="margin-top: 1.5rem;"><i class="fa-solid fa-sliders"></i> Career Preferences</h3>
+                            <p class="info-text"><i class="fa-solid fa-location-crosshairs" style="width: 20px;"></i> <strong>Locations:</strong> ${locs || 'Open'}</p>
+                            <p class="info-text"><i class="fa-solid fa-money-bill-wave" style="width: 20px;"></i> <strong>Expected Salary:</strong> ${prefs.expected_salary || 'Negotiable'}</p>
+                            <p class="info-text"><i class="fa-solid fa-clock" style="width: 20px;"></i> <strong>Notice Period:</strong> ${prefs.notice_period || 'Immediate'}</p>
+                        </div>
+
+                        <!-- Right Column: Skills -->
+                        <div class="glass-card info-card">
+                            <h3><i class="fa-solid fa-code"></i> Proven Tech Stack</h3>
+                            <div style="margin-bottom: 1.5rem;">${skillsHTML}</div>
+                            
+                            <h3><i class="fa-solid fa-seedling"></i> Currently Learning</h3>
+                            <div>${learningHTML || '<p class="info-text">None</p>'}</div>
+                        </div>
+
+                        <!-- Full Width: Summary -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-bolt"></i> Professional Summary</h3>
+                            <p class="info-text">${profile.personal?.summary}</p>
+                        </div>
+
+                        <!-- Full Width: Achievements -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-medal"></i> Achievements & Certifications</h3>
+                            <ul style="list-style-type: none; color: var(--text-main); line-height: 1.6;">
+                                ${achHTML || '<p class="info-text">No achievements listed.</p>'}
+                            </ul>
+                        </div>
+
+                        <!-- Full Width: Experience -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-briefcase"></i> Experience</h3>
+                            <div>${expHTML || '<p class="info-text">No experience listed.</p>'}</div>
+                        </div>
+
+                        <!-- Full Width: Projects -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-laptop-code"></i> Projects</h3>
+                            <div>${projHTML || '<p class="info-text">No projects listed.</p>'}</div>
+                        </div>
+
+                        <!-- Full Width: Education -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-graduation-cap"></i> Education</h3>
+                            <div>${eduHTML || '<p class="info-text">No education listed.</p>'}</div>
+                        </div>
+                        <!-- Full Width: Leadership & Extra-Curriculars -->
+                        <div class="glass-card info-card" style="grid-column: 1 / -1;">
+                            <h3><i class="fa-solid fa-users"></i> Leadership & Extra-Curriculars</h3>
+                            <div>${extraHTML || '<p class="info-text">No extra-curriculars listed.</p>'}</div>
+                        </div>
+
+                    </div>
+                `;
+
+                contentArea.className = "";
+            } catch (error) {
+                document.getElementById('content-area').innerHTML = `<p style="color: #ef4444;">Error loading profile: ${error.message}</p>`;
+            }
+        }
+
+        async function fetchJobsData() {
+            try {
+                const response = await fetch('/api/jobs');
+                const jobs = await response.json();
+                const contentArea = document.getElementById('content-area');
+
+                if (!jobs || jobs.length === 0) {
+                    contentArea.innerHTML = `
+                        <div class="glass-card" style="text-align: center; padding: 3rem;">
+                            <i class="fa-solid fa-ghost" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                            <h3 style="margin-bottom: 0.5rem;">No Hot Jobs Found</h3>
+                            <p class="info-text">Your database is empty. Click "Refresh Feed" below to run the scraper and AI scoring!</p>
+                            <button class="btn-trigger" style="margin: 1.5rem auto 0;" onclick="refreshJobs()">
+                                <i class="fa-solid fa-rotate"></i> Refresh Feed
+                            </button>
+                        </div>
+                    `;
+                    contentArea.className = "";
+                    return;
+                }
+
+                // Top Bar with Refresh Button
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.2rem; color: var(--text-main);"><i class="fa-solid fa-fire" style="color: #f97316;"></i> Top ${jobs.length} Matching Roles</h2>
+                        <button class="btn-trigger" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="refreshJobs()">
+                            <i class="fa-solid fa-rotate"></i> Refresh Feed
+                        </button>
+                    </div>
+                `;
+
+                jobs.forEach(job => {
+                    const skillsHTML = (job.skills || []).map(s => `<span class="skill-badge" style="font-size: 0.75rem; padding: 0.2rem 0.6rem;">${s}</span>`).join('');
+
+                    // Dynamic color coding for Match Score
+                    let sColor = '#4ade80'; let sBg = 'rgba(34, 197, 94, 0.15)'; // Green
+                    if (job.match_score < 75) { sColor = '#fbbf24'; sBg = 'rgba(251, 191, 36, 0.15)'; } // Yellow
+                    if (job.match_score < 50) { sColor = '#ef4444'; sBg = 'rgba(239, 68, 68, 0.15)'; } // Red
+
+                    html += `
+                        <div class="job-card">
+                            <div class="job-header">
+                                <div>
+                                    <h3 class="job-title">${job.title}</h3>
+                                    <div class="job-company"><i class="fa-regular fa-building"></i> ${job.company}</div>
+                                </div>
+                                <div class="match-score" style="color: ${sColor}; background: ${sBg}; border: 1px solid ${sColor}50;">
+                                    ${job.match_score}% Match
+                                </div>
+                            </div>
+                            
+                            <div class="job-meta">
+                                <span><i class="fa-solid fa-location-dot"></i> ${job.location || 'Unknown'}</span>
+                                ${job.salary ? `<span><i class="fa-solid fa-money-bill-wave"></i> ${job.salary}</span>` : ''}
+                                <span><i class="fa-regular fa-clock"></i> ${job.posted_date || 'Recent'}</span>
+                                <span><i class="fa-solid fa-satellite-dish"></i> ${job.source}</span>
+                            </div>
+
+                            ${skillsHTML ? `<div style="margin-top: 0.5rem;">${skillsHTML}</div>` : ''}
+                            
+                            <div>
+                                <a href="${job.apply_url}" target="_blank" class="btn-apply">
+                                    Apply Now <i class="fa-solid fa-arrow-up-right-from-square" style="margin-left: 0.5rem;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contentArea.innerHTML = html;
+                contentArea.className = "";
+            } catch (error) {
+                document.getElementById('content-area').innerHTML = `<p style="color: #ef4444;">Error loading jobs: ${error.message}</p>`;
+            }
+        }
+
+        async function refreshJobs() {
+            const contentArea = document.getElementById('content-area');
+            contentArea.innerHTML = `
+                <div class="glass-card" style="text-align: center; padding: 3rem;">
+                    <i class="fa-solid fa-robot fa-spin" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+                    <h3 style="margin-bottom: 0.5rem;">AI is Finding & Scoring Jobs...</h3>
+                    <p class="info-text">Fetching latest jobs from Remotive, Adzuna, and LinkedIn.<br>This usually takes 30-40 seconds.</p>
+                </div>
+            `;
+            try {
+                // This calls the backend, which triggers the JobFeed module!
+                await fetch('/api/jobs?refresh=true');
+                fetchJobsData();
+            } catch (e) {
+                contentArea.innerHTML = `<p style="color: #ef4444;">Refresh failed: ${e.message}</p>`;
+            }
+        }
+
+        function updateSmartAddFields() {
+            const type = document.getElementById('smart-add-type').value;
+            document.getElementById('fields-project').style.display = type === 'project' ? 'block' : 'none';
+            document.getElementById('fields-experience').style.display = type === 'experience' ? 'block' : 'none';
+            document.getElementById('fields-achievement').style.display = type === 'achievement' ? 'block' : 'none';
+            document.getElementById('fields-extra-curricular').style.display = type === 'extra_curricular' ? 'block' : 'none';
+        }
+
+        async function submitSmartAdd(event) {
+            event.preventDefault();
+            const btn = document.getElementById('smart-add-btn');
+            btn.innerHTML = '<i class="fa-solid fa-robot fa-spin"></i> Gemini is enhancing & saving...';
+            btn.disabled = true;
+
+            try {
+                const type = document.getElementById('smart-add-type').value;
+                const payload = {
+                    type: type,
+                    title: type === 'project' ? document.getElementById('p_title')?.value || '' :
+                        type === 'extra_curricular' ? document.getElementById('ec_role')?.value || '' :
+                            document.getElementById('e_title')?.value || '',
+                    company: type === 'extra_curricular' ? document.getElementById('ec_org')?.value || '' :
+                        document.getElementById('e_company')?.value || '',
+                    duration: document.getElementById('e_duration')?.value || '',
+                    raw_text: document.getElementById('raw_text')?.value || '',
+                    github_link: document.getElementById('p_github')?.value || '',
+                    live_link: document.getElementById('p_live')?.value || '',
+                    link: document.getElementById('a_link')?.value || ''
+                };
+
+                const response = await fetch('/api/profile/smart-add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    alert('✨ Successfully enhanced and added to your profile! Check the Overview tab to see it.');
+                    event.target.reset();
+                    updateSmartAddFields();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Request failed: ' + error.message);
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Enhance & Save to Profile';
+                btn.disabled = false;
+            }
+        }
+
+        async function generateStandardPDF(btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/resume/generate', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.status === 'ok') {
+                    // This opens the backend download route in a new tab!
+                    window.open('/api/resume/download/' + result.filename, '_blank');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Request failed: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function parseMarkdown(text) {
+            if (!text) return '';
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text-main);">$1</strong>');
+        }
+
+        async function generateJDPDF(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btn-generate-jd');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-robot fa-spin"></i> Gemini is tailoring PDF (takes ~10s)...';
+            btn.disabled = true;
+
+            try {
+                const jdText = document.getElementById('jd-text').value;
+                const response = await fetch('/api/resume/jd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jd: jdText })
+                });
+
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    window.open('/api/resume/download/' + result.filename, '_blank');
+                    alert('✨ JD-Tailored Resume Generated successfully!');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Request failed: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+
+
+        // Initialize first view
+        showView('overview');
+        fetchSchedule();
+
+        async function fetchSchedule() {
+            try {
+                const response = await fetch('/api/schedule/next');
+                const data = await response.json();
+                const el = document.getElementById('schedule-text');
+                if (data.next_run) {
+                    const dateObj = new Date(data.next_run);
+                    el.innerHTML = `<i class="fa-regular fa-clock"></i> Next Run: ${dateObj.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}`;
+                } else {
+                    el.innerHTML = `<i class="fa-regular fa-clock"></i> Next Run: Not Scheduled`;
+                }
+            } catch (e) {
+                document.getElementById('schedule-text').innerText = "Schedule: Unknown";
+            }
+        }
+
+        async function deleteProfileItem(type, index) {
+            if (!confirm(`Are you sure you want to delete this item?`)) return;
+            try {
+                const response = await fetch('/api/profile/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, index })
+                });
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    fetchOverviewData(); // Refresh the UI instantly
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Request failed: ' + error.message);
+            }
+        }
+
+        async function openRawEditor() {
+            const btn = document.getElementById('btn-edit-yaml');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+
+            try {
+                const response = await fetch('/api/profile/raw');
+                const result = await response.json();
+
+                if (result.status === 'ok') {
+                    document.getElementById('page-title').innerText = "Edit Raw Profile";
+                    btn.style.display = 'none'; // Hide edit button while editing
+
+                    const contentArea = document.getElementById('content-area');
+                    contentArea.className = ""; // Remove grid layout classes
+                    contentArea.innerHTML = `
+                        <div class="glass-card" style="height: calc(100vh - 150px); display: flex; flex-direction: column;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <p class="info-text" style="margin: 0;">Make edits directly to your master_profile.yaml. Use standard YAML formatting.</p>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn-trigger" onclick="showView('overview')" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-main);"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                                    <button class="btn-trigger" onclick="saveRawProfile(this)"><i class="fa-solid fa-save"></i> Save Changes</button>
+                                </div>
+                            </div>
+                            <textarea id="raw-yaml-editor" class="form-textarea" style="flex: 1; font-family: monospace; font-size: 0.95rem; background: rgba(0,0,0,0.3); resize: none;">${result.yaml}</textarea>
+                        </div>
+                    `;
+                } else {
+                    alert("Failed to load profile data.");
+                }
+            } catch (e) {
+                alert("Request failed: " + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function saveRawProfile(btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            const yamlContent = document.getElementById('raw-yaml-editor').value;
+            try {
+                const response = await fetch('/api/profile/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ yaml: yamlContent })
+                });
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    showView('overview'); // Go back to overview and refresh
+                } else {
+                    alert("Error saving: " + result.error);
+                }
+            } catch (e) {
+                alert("Request failed: " + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        async function fetchSuggestionsData() {
+            try {
+                const response = await fetch('/api/suggestions');
+                const suggestions = await response.json();
+                const contentArea = document.getElementById('content-area');
+
+                if (suggestions.length === 0) {
+                    contentArea.innerHTML = `
+                        <div style="text-align: center; padding: 3rem;">
+                            <i class="fa-solid fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
+                            <h3 style="margin-bottom: 0.5rem;">All Caught Up!</h3>
+                            <p class="info-text">No pending AI suggestions. Your profile is fully optimized based on the latest trends.</p>
+                        </div>`;
+                    return;
+                }
+
+                let html = `<p class="info-text" style="margin-bottom: 1.5rem;">These suggestions were generated by analyzing gaps between your profile and current market trends. Approving them will mark them as resolved in the database.</p>`;
+
+                suggestions.forEach(s => {
+                    let typeIcon = "fa-lightbulb";
+                    if (s.suggestion_type === 'add_skill') typeIcon = "fa-plus-circle";
+                    if (s.suggestion_type === 'remove_skill') typeIcon = "fa-minus-circle";
+                    if (s.suggestion_type === 'update_content') typeIcon = "fa-pen-to-square";
+
+                    const parts = s.suggestion_text.split(":::");
+                    const displayText = parts.length > 1 ? parts[1] : parts[0];
+
+                    html += `
+                        <div class="glass-card" style="margin-bottom: 1rem; border-color: rgba(255,255,255,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                                <div>
+                                    <h4 style="color: var(--accent); margin-bottom: 0.5rem; font-size: 1.1rem;"><i class="fa-solid ${typeIcon}"></i> ${displayText}</h4>
+                                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;"><i class="fa-solid fa-robot"></i> <strong>AI Reasoning:</strong> ${s.ai_reasoning}</p>
+                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Generated: ${new Date(s.created_at + (s.created_at.includes('Z') ? '' : 'Z')).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                                    <button class="btn-trigger" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; padding: 0.5rem;" onclick="resolveSuggestion(${s.id}, 'approved')" title="Approve">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    <button class="btn-trigger" style="background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; padding: 0.5rem;" onclick="resolveSuggestion(${s.id}, 'rejected')" title="Reject">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                contentArea.innerHTML = html;
+            } catch (error) {
+                document.getElementById('content-area').innerHTML = `<p style="color: #ef4444;">Error loading suggestions: ${error.message}</p>`;
+            }
+        }
+
+        async function resolveSuggestion(id, status) {
+            try {
+                const response = await fetch(`/api/suggestions/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    fetchSuggestionsData(); // refresh the list
+                } else {
+                    alert("Error: " + result.error);
+                }
+            } catch (e) {
+                alert("Request failed: " + e.message);
+            }
+        }
+
+        async function fetchLogsData() {
+            try {
+                const response = await fetch('/api/logs');
+                const logs = await response.json();
+                const contentArea = document.getElementById('content-area');
+
+                if (logs.length === 0) {
+                    contentArea.innerHTML = '<p class="info-text">No system logs found yet.</p>';
+                    return;
+                }
+
+                let logsHTML = `
+                    <div style="background: rgba(0,0,0,0.4); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); font-family: monospace; height: 65vh; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-weight: normal; width: 180px;">Timestamp</th>
+                                    <th style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-weight: normal; width: 120px;">Type</th>
+                                    <th style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-weight: normal;">Description</th>
+                                    <th style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-weight: normal; width: 100px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                logs.forEach(log => {
+                    // Supabase stores UTC but returns without 'Z'. Append 'Z' to force UTC parsing, then convert to IST.
+                    const utcDateStr = log.created_at.endsWith('Z') ? log.created_at : log.created_at + 'Z';
+                    const date = new Date(utcDateStr).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                    const statusColor = log.status === 'success' ? '#10b981' : (log.status === 'error' ? '#ef4444' : '#fbbf24');
+
+                    logsHTML += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.75rem 0.5rem; color: var(--text-muted);">${date}</td>
+                            <td style="padding: 0.75rem 0.5rem; color: var(--accent);">${log.action_type}</td>
+                            <td style="padding: 0.75rem 0.5rem; color: var(--text-main);">
+                                ${log.description}
+                                ${log.details ? `<br><span style="font-size: 0.8rem; color: var(--text-muted);">${log.details}</span>` : ''}
+                            </td>
+                            <td style="padding: 0.75rem 0.5rem; color: ${statusColor};">[${log.status.toUpperCase()}]</td>
+                        </tr>
+                    `;
+                });
+
+                logsHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                contentArea.innerHTML = logsHTML;
+            } catch (error) {
+                document.getElementById('content-area').innerHTML = `<p style="color: #ef4444;">Error loading logs: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

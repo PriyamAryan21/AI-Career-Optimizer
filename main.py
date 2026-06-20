@@ -1,0 +1,108 @@
+"""
+AI Career Optimizer — Main Entry Point
+Usage:
+    python main.py                    # Run full update cycle
+    python main.py --login            # Manual Naukri login (save session)
+    python main.py --scrape           # Scrape jobs only
+    python main.py --trends           # Scrape + analyze trends
+    python main.py --resume           # Generate resume PDF only
+    python main.py --gaps             # Run gap analysis only
+    python main.py --db-init          # Initialize database tables
+"""
+
+import sys
+import asyncio
+sys.stdout.reconfigure(encoding='utf-8')
+
+
+def main():
+    args = sys.argv[1:]
+
+    if not args:
+        # Default: run full update cycle
+        from core.freshness_manager import run
+        run()
+
+    elif "--login" in args:
+        from core.auth import manual_login
+        asyncio.run(manual_login())
+
+    elif "--validate" in args:
+        from core.auth import validate_session
+        result = asyncio.run(validate_session())
+        sys.exit(0 if result else 1)
+
+    elif "--scrape" in args:
+        from intelligence.job_scraper import scrape_all_roles
+        data = scrape_all_roles()
+        for role, jobs in data.items():
+            print(f"  {role}: {len(jobs)} jobs")
+
+    elif "--trends" in args:
+        from intelligence.job_scraper import scrape_all_roles
+        from intelligence.trend_analyzer import analyze_trends
+        scraped = scrape_all_roles(pages_per_role=1)
+        trends = analyze_trends(scraped)
+        for role, skills in trends.items():
+            print(f"\n  {role}:")
+            for s in skills[:10]:
+                print(f"    {s['skill']}: {s['frequency']}/{s['total_postings']}")
+
+    elif "--resume" in args:
+        from core.resume_generator import generate_resume_pdf
+        path = generate_resume_pdf()
+        print(f"Resume: {path}")
+
+    elif "--gaps" in args:
+        from intelligence.gap_analyzer import run_full_analysis
+        result = run_full_analysis()
+        if result:
+            print(f"Match Score: {result['match_score']}%")
+
+    elif "--push" in args:
+        print("Testing Naukri upload (skipping scraper and AI)...")
+        from core.auth import get_authenticated_context
+        from playwright.async_api import async_playwright
+        from core.headline_rotator import get_next_headline, update_headline_on_naukri
+        from core.resume_generator import upload_resume_to_naukri
+        from config.settings import OUTPUT_DIR, NAUKRI_PROFILE_URL
+        import asyncio
+        
+        async def push_test():
+            async with async_playwright() as p:
+                browser, context = await get_authenticated_context(p)
+                try:
+                    page = await context.new_page()
+                    await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded")
+                    
+                    new_headline = get_next_headline(use_ai=False)
+                    await update_headline_on_naukri(page, new_headline)
+                    
+                    pdfs = list(OUTPUT_DIR.glob("*.pdf"))
+                    if pdfs:
+                        latest_pdf = max(pdfs, key=lambda x: x.stat().st_mtime)
+                        await upload_resume_to_naukri(page, str(latest_pdf))
+                    else:
+                        print("No PDFs found in output/resumes/")
+                finally:
+                    await browser.close()
+        asyncio.run(push_test())
+
+    elif "--db-init" in args:
+        from database.db_init import initialize_database
+        initialize_database()
+
+    elif "--jobs" in args:
+        from intelligence.job_feed import get_hot_job_feed
+        jobs = get_hot_job_feed(use_ai_scoring=True)
+        for i, job in enumerate(jobs[:10], 1):
+            print(f"\n  #{i} [{job['match_score']}% match] {job['title']}")
+            print(f"     {job['company']} | {job['location']} | {job['source']}")
+            print(f"     {job['apply_url'][:80]}")
+
+    else:
+        print(__doc__)
+
+
+if __name__ == "__main__":
+    main()

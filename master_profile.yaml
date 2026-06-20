@@ -1,0 +1,167 @@
+personal:
+  name: Priyam Aryan
+  email: papriyamaryan@gmail.com
+  phone: +91-6201978990
+  location: Greater Noida, Uttar Pradesh, India
+  experience_level: Fresher / Junior (3 months internship experience, B.Tech graduating
+    in 2026). Seeking Entry-Level or Intern roles.
+  experience_keyword: fresher
+  links:
+    linkedin: https://www.linkedin.com/in/aryanatwork
+    github: https://github.com/PriyamAryan21
+    leetcode: https://leetcode.com/u/PriyamAryan/
+    portfolio: https://vocal-phoenix-b082fe.netlify.app/
+  headline_pool:
+  - Full Stack Developer | Python | React.js | Node.js | .NET Core | PostgreSQL
+  - Frontend Engineer | React.js | TypeScript | Redux | Tailwind CSS
+  - Full Stack .NET Developer | C# | ASP.NET Core | SQL Server | React
+  - Software Engineer | System Design | Distributed Systems | AWS
+  - AI/ML Engineer | Python | TensorFlow | NLP | BioBERT
+  summary: Computer Science (AI & ML) graduate with hands-on experience building scalable
+    full-stack applications, backend systems, and AI-powered tools using Python, React.js,
+    Node.js, .NET Core, and Angular. Delivered production features during a front-end
+    internship that scaled platform capacity 20x to 20,000+ concurrent users with
+    99.9% uptime, and engineered ML systems achieving 92% factual accuracy in clinical
+    NLP applications. Published IEEE research and recipient of a Best Paper award
+    at a Scopus-indexed conference. Seeking Full Stack or Backend Engineering roles
+    focused on scalable systems and AI-powered platforms.
+experience:
+- company: RnPSoft Pvt. Ltd.
+  role: Front-End Developer Intern
+  duration: May 2024 - August 2024 | Delhi, India
+  certificate_link: https://drive.google.com/file/d/1MyyK0gb434thIWgOHlmoqZSRWMEdyZCH/view
+  bullets:
+  - Accelerated platform responsiveness by integrating 6 API Design & Microservices
+    into the Kalinga AI web platform using optimized asynchronous data-fetching, reducing
+    page load time by 30% and enabling real-time chatbot interactions for 5,000+ concurrent
+    users
+  - Engineered a News Web Application by building 4 dynamic data-fetching API Design
+    & Microservices with React.js and Node.js, leveraging efficient Redux state management
+    to improve content delivery speed by 40%
+  - Scaled platform capacity 20x (1,000 → 20,000 concurrent users) by revamping the
+    company landing page and implementing a fault-tolerant Azure DevOps pipeline with
+    Docker and Git, sustaining 99.9% uptime in production
+projects:
+- name: TravelLink - Collaborative Trip Planning Platform
+  github_link: https://github.com/PriyamAryan21/Travel-Link-dotNet-React
+  live_link: https://travel-link-dot-net-react.vercel.app/
+  description: Engineered a full-stack collaborative travel platform using .NET Core,
+    C#, React, TypeScript, and PostgreSQL, serving 500+ test users across 120+ simulated
+    trips.
+  bullets:
+  - Built an intelligent expense-splitting engine supporting equal, percentage, and
+    exact splits with dynamic rebalancing logic across groups of up to 10 members,
+    achieving 100% accurate cost distribution and eliminating manual calculation errors
+    for 1,000+ transactions.
+  - Developed a Smart AI Itinerary Generator using suggestion and voting-based mechanisms,
+    enabling groups to propose 100+ activity options per trip and democratically vote
+    on stops, cutting itinerary planning time increasing group consensus rate.
+  - Implemented real-time multi-user location sharing via SignalR on a single map
+    interface, supporting up to 10 concurrent travelers with under 2-second location-sync
+    latency, improving group coordination and safety during road trips.
+  tech:
+  - .NET Core
+  - C#
+  - React
+  - TypeScript
+  - Tailwind CSS
+  - PostgreSQL
+  - Entity Framework Core
+  - SignalR
+  - JWT Authentication
+- name: Clinical Question Answering Chatbot
+  github_link: https://github.com/PriyamAryan21/Clinical-Question-Answering-Chatbot-
+  description: Built a resource-efficient Clinical QA system using a two-stage NLP
+    pipeline (BioBERT + FLAN-T5) in Python and TensorFlow, trained and evaluated on
+    1,000+ clinical notes.
+  bullets:
+  - Designed a dual-stage architecture combining relevance classification with controlled
+    text generation to minimize hallucinations, achieving 92% factual accuracy and
+    reducing irrelevant responses by 35% through context filtering.
+  - Optimized the inference pipeline to run efficiently on limited hardware (8GB RAM,
+    no GPU/cloud dependency), cutting average query response time to under 3 seconds
+    and eliminating recurring cloud compute costs by 100%.
+  tech:
+  - Python
+  - TensorFlow
+  - BioBERT
+  - FLAN-T5
+  - Gradio
+  - NumPy
+  - Pandas
+skills:
+  proven:
+  - Python
+  - React.js
+  - Next.js
+  - Angular
+  - JavaScript
+  - TypeScript
+  - C#
+  - .NET Core / dotNet
+  - Node.js
+  - API Design & Microservices
+  - JWT Authentication
+  - MySQL
+  - PostgreSQL
+  - MS SQL Server
+  - Git
+  - Docker
+  - Azure DevOps
+  - TensorFlow
+  - Scikit-Learn
+  - NLP
+  - Data Structures & Algorithms
+  - System Design
+  learning:
+  - Kubernetes
+  - GraphQL
+  - AWS CloudFormation
+  - Microservices Architecture
+  suggested: []
+achievements:
+- Published research paper in 2025 IEEE 14th International Conference on Communication
+  Systems and Network Technologies in IEEE Xplore. [View Paper](https://ieeexplore.ieee.org/document/10968344)
+- Honoured with best paper award for the Clinical Question Answering Chatbot project
+  in a Scopus-indexed conference. [View Award Certificate](https://drive.google.com/file/d/1k51mQoGcrf2IM8Dpvoqv4A12XGQE0lYu/view?usp=sharing)
+education:
+- degree: B.Tech in Computer Science (Artificial Intelligence & Machine Learning)
+  institution: Sharda University
+  year: 'September 2022 - May 2026 (GPA: 8.1/10.0)'
+certifications: []
+preferences:
+  preferred_locations:
+  - Bangalore
+  - Hyderabad
+  - Delhi NCR
+  - Remote
+  expected_salary: 6-9 LPA
+  notice_period: Immediate
+extra_curriculars:
+- role: Escort Leader
+  organization: Barclays Placement Series 2025
+  bullets:
+  - Led and coordinated a 10-member team to facilitate the HR escorting process, ensuring
+    a seamless placement drive experience
+- role: Escort Leader
+  organization: Mega Job Fair 2024
+  bullets:
+  - Directed a team of 10 members to escort and assist HR professionals, streamlining
+    event logistics
+- role: Speaker Curator
+  organization: TEDx Campus 2025
+  bullets:
+  - Researched and invited impactful speakers, managing communications to curate an
+    engaging event lineup
+- role: Core Committee Member
+  organization: Chorus 2k25
+  bullets:
+  - Managed and directed a 20-member team, overseeing event operations and execution
+- role: Stage Management Leader
+  organization: Sangam University Fest 2025
+  bullets:
+  - Orchestrated a cross-functional team of **15 personnel** to execute high-stakes
+    stage productions, ensuring **100% seamless transition** between performance segments.
+  - Streamlined logistical workflows and technical stage operations, resulting in
+    a **20% reduction in set-up time** and the successful delivery of **50+ live events**
+    annually.
