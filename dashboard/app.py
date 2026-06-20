@@ -392,7 +392,7 @@ def smart_add_profile_item():
             "{raw_text}"
             
             1. Write a 1-sentence professional project description.
-            2. Convert the details into 3 professional, high-impact resume bullet points using the "Action Word + What + How + Effect/Metrics" framework.
+            2. Convert the details into 3 professional, high-impact resume bullet points using the "Impact Word + What + How + Effect/Metrics" framework.
             3. If specific metrics or numbers are missing, INVENT highly realistic, reasonable numbers.
             4. STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text.
             
@@ -430,7 +430,7 @@ def smart_add_profile_item():
             You are an expert resume writer. The user had a job/internship and described it in layman's terms:
             "{raw_text}"
             
-            1. Convert this into 3 professional, high-impact resume bullet points using the "Action Word + What + How + Effect/Metrics" framework.
+            1. Convert this into 3 professional, high-impact resume bullet points using the "Impact Word + What + How + Effect/Metrics" framework.
             2. If specific metrics or numbers are missing, INVENT highly realistic, reasonable numbers.
             3. STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text.
             
@@ -477,7 +477,7 @@ def smart_add_profile_item():
             You are an expert resume writer. The user held a leadership or extra-curricular role and described what they did in layman's terms:
             "{raw_text}"
             
-            1. Convert this into EXACTLY ONE single, highly professional, impact-driven resume bullet point using the "Action Word + What + How + Effect/Metrics" framework.
+            1. Convert this into EXACTLY ONE single, highly professional, impact-driven resume bullet point using the "Impact Word + What + How + Effect/Metrics" framework.
             2. If specific metrics or numbers are missing, INVENT highly realistic, reasonable numbers based on the context.
             3. STRATEGICALLY use **markdown bolding** on the most critical keywords or metrics.
             
