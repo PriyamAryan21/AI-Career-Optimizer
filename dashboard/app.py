@@ -120,6 +120,79 @@ def update_profile():
         return jsonify({"error": str(e)}), 500
 
 
+# ── API: Skills Management ──────────────────────────────
+@app.route('/api/skills', methods=['POST'])
+def add_skill():
+    try:
+        data = request.json
+        skill = data.get('skill')
+        category = data.get('category', 'learning') # 'proven' or 'learning'
+        
+        if not skill:
+            return jsonify({"error": "Skill name required"}), 400
+            
+        profile = load_master_profile()
+        if 'skills' not in profile:
+            profile['skills'] = {'proven': [], 'learning': []}
+            
+        if skill not in profile['skills'][category]:
+            profile['skills'][category].append(skill)
+            save_master_profile(profile)
+            
+            # Sync to DB
+            from database.models import sync_skill_inventory
+            sync_skill_inventory(profile)
+            
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills/move', methods=['POST'])
+def move_skill():
+    """Moves a skill from learning to proven."""
+    try:
+        data = request.json
+        skill = data.get('skill')
+        
+        profile = load_master_profile()
+        if 'learning' in profile.get('skills', {}) and skill in profile['skills']['learning']:
+            profile['skills']['learning'].remove(skill)
+            if skill not in profile['skills']['proven']:
+                profile['skills']['proven'].append(skill)
+            save_master_profile(profile)
+            
+            from database.models import sync_skill_inventory
+            sync_skill_inventory(profile)
+            
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/skills', methods=['DELETE'])
+def remove_skill():
+    try:
+        data = request.json
+        skill = data.get('skill')
+        
+        profile = load_master_profile()
+        removed = False
+        if 'learning' in profile.get('skills', {}) and skill in profile['skills']['learning']:
+            profile['skills']['learning'].remove(skill)
+            removed = True
+        if 'proven' in profile.get('skills', {}) and skill in profile['skills']['proven']:
+            profile['skills']['proven'].remove(skill)
+            removed = True
+            
+        if removed:
+            save_master_profile(profile)
+            from database.models import sync_skill_inventory
+            sync_skill_inventory(profile)
+            
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ── API: Add/Remove Profile Sections ──────────────────
 @app.route('/api/profile/project', methods=['POST'])
 def add_project():
@@ -480,6 +553,8 @@ def update_suggestion(suggestion_id):
                     with open(MASTER_PROFILE_PATH, 'w', encoding='utf-8') as f:
                         yaml.dump(profile, f, sort_keys=False, allow_unicode=True, default_flow_style=False)
                     log_action("suggestion_applied", f"Programmatically added: {target_skill}", status="success")
+                    from database.models import sync_skill_inventory
+                    sync_skill_inventory(profile)
                     
                 elif stype == "remove_skill":
                     for cat in ["proven", "learning", "suggested"]:
@@ -489,6 +564,8 @@ def update_suggestion(suggestion_id):
                     with open(MASTER_PROFILE_PATH, 'w', encoding='utf-8') as f:
                         yaml.dump(profile, f, sort_keys=False, allow_unicode=True, default_flow_style=False)
                     log_action("suggestion_applied", f"Programmatically removed: {target_skill}", status="success")
+                    from database.models import sync_skill_inventory
+                    sync_skill_inventory(profile)
                     
                 elif stype == "update_content":
                     import google.generativeai as genai

@@ -360,11 +360,13 @@
             <div class="nav-item active" onclick="showView('overview')"><i class="fa-solid fa-chart-pie"></i> Overview
             </div>
             <div class="nav-item" onclick="showView('metrics')"><i class="fa-solid fa-chart-line"></i> Performance</div>
+            <div class="nav-item" onclick="showView('skills')"><i class="fa-solid fa-brain"></i> Skills Matrix</div>
             <div class="nav-item" onclick="showView('jobs')"><i class="fa-solid fa-fire"></i> Hot Jobs</div>
             <div class="nav-item" onclick="showView('suggestions')"><i class="fa-solid fa-lightbulb"></i> AI Suggestions
             </div>
             <div class="nav-item" onclick="showView('resume')"><i class="fa-solid fa-file-pdf"></i> Resume Builder</div>
-            <div class="nav-item" onclick="showView('session')"><i class="fa-solid fa-cookie-bite"></i> Session Manager</div>
+            <div class="nav-item" onclick="showView('session')"><i class="fa-solid fa-cookie-bite"></i> Session Manager
+            </div>
             <div class="nav-item" onclick="showView('logs')"><i class="fa-solid fa-terminal"></i> System Logs</div>
         </div>
     </nav>
@@ -424,7 +426,7 @@
                 contentArea.innerHTML = `
                     <div class="glass-card" style="margin-bottom: 1.5rem; text-align: center;">
                         <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-chart-line" style="color: var(--accent);"></i> Algorithmic Performance</h2>
-                        <p style="color: var(--text-muted);">Real-time metrics tracking the AI's impact on Naukri's search algorithm.</p>
+                        <p style="color: var(--text-muted);">Real-time metrics tracking the project's impact on Naukri's search algorithm.</p>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                         <div class="glass-card" style="text-align: center;">
@@ -449,6 +451,37 @@
                     </div>
                 `;
                 fetchMetricsData();
+            } else if (viewId === 'skills') {
+                pageTitle.innerText = "Skills Matrix";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "";
+                contentArea.innerHTML = `
+                    <div class="glass-card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-brain" style="color: var(--accent);"></i> Skill Inventory</h2>
+                            <p style="color: var(--text-muted);">Manage your proven and learning skills. These sync directly to your resume and database.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="new-skill-input" placeholder="e.g. Docker" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; width: 150px;">
+                            <select id="new-skill-category" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
+                                <option value="learning">Learning</option>
+                                <option value="proven">Proven</option>
+                            </select>
+                            <button class="btn-trigger" onclick="addSkill()" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-plus"></i> Add</button>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="glass-card">
+                            <h3 style="color: #38bdf8; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> Proven Skills</h3>
+                            <div id="skills-proven-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">Loading...</div>
+                        </div>
+                        <div class="glass-card">
+                            <h3 style="color: #a855f7; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-book"></i> Learning Skills</h3>
+                            <div id="skills-learning-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">Loading...</div>
+                        </div>
+                    </div>
+                `;
+                fetchSkillsData();
             } else if (viewId === 'jobs') {
                 pageTitle.innerText = "Hot Job Feed";
                 btnEditYaml.style.display = "none";
@@ -607,12 +640,12 @@
             try {
                 const response = await fetch('/api/metrics');
                 const data = await response.json();
-                
+
                 if (!data || data.length === 0) {
                     document.getElementById('content-area').innerHTML += '<p style="color:var(--text-muted); text-align:center;">No metrics data found yet. Run an automation cycle!</p>';
                     return;
                 }
-                
+
                 // Update KPIs from latest data point
                 const latest = data[data.length - 1];
                 document.getElementById('kpi-search-90d').innerText = latest.search_app_90d;
@@ -628,7 +661,7 @@
                 const actions = data.map(d => d.recruiter_actions);
 
                 const ctx = document.getElementById('metricsChart').getContext('2d');
-                
+
                 // Destroy old chart if it exists
                 if (metricsChartInstance) {
                     metricsChartInstance.destroy();
@@ -702,6 +735,66 @@
             } catch (error) {
                 console.error("Failed to load metrics", error);
             }
+        }
+
+        // ── Skills Matrix JS ──
+        async function fetchSkillsData() {
+            try {
+                const response = await fetch('/api/profile');
+                const profile = await response.json();
+                const skills = profile.skills || {proven: [], learning: []};
+                
+                const provenHtml = (skills.proven || []).map(s => `
+                    <span class="skill-badge" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; padding: 0.5rem 0.75rem;">
+                        ${s} 
+                        <i class="fa-solid fa-trash" style="cursor: pointer; color: var(--text-muted);" onclick="removeSkill('${s}')" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                    </span>
+                `).join('');
+                
+                const learningHtml = (skills.learning || []).map(s => `
+                    <span class="skill-badge" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; padding: 0.5rem 0.75rem;">
+                        ${s} 
+                        <i class="fa-solid fa-arrow-up" title="Promote to Proven" style="cursor: pointer; color: var(--text-muted);" onclick="moveSkill('${s}')" onmouseover="this.style.color='#38bdf8'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <i class="fa-solid fa-trash" style="cursor: pointer; color: var(--text-muted);" onclick="removeSkill('${s}')" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                    </span>
+                `).join('');
+                
+                document.getElementById('skills-proven-list').innerHTML = provenHtml || '<p style="color:var(--text-muted);">No proven skills.</p>';
+                document.getElementById('skills-learning-list').innerHTML = learningHtml || '<p style="color:var(--text-muted);">No learning skills.</p>';
+                
+            } catch(e) { console.error(e); }
+        }
+
+        async function addSkill() {
+            const skill = document.getElementById('new-skill-input').value.trim();
+            const category = document.getElementById('new-skill-category').value;
+            if(!skill) return;
+            
+            await fetch('/api/skills', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({skill, category})
+            });
+            fetchSkillsData();
+        }
+
+        async function moveSkill(skill) {
+            await fetch('/api/skills/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({skill})
+            });
+            fetchSkillsData();
+        }
+
+        async function removeSkill(skill) {
+            if(!confirm(`Remove ${skill}?`)) return;
+            await fetch('/api/skills', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({skill})
+            });
+            fetchSkillsData();
         }
 
         async function fetchOverviewData() {
@@ -951,6 +1044,91 @@
                 fetchJobsData();
             } catch (e) {
                 contentArea.innerHTML = `<p style="color: #ef4444;">Refresh failed: ${e.message}</p>`;
+            }
+        }
+
+        async function fetchSuggestionsData() {
+            try {
+                const response = await fetch('/api/suggestions');
+                const suggestions = await response.json();
+                const contentArea = document.getElementById('content-area');
+
+                if (!suggestions || suggestions.length === 0) {
+                    contentArea.innerHTML = `
+                        <div class="glass-card" style="text-align: center; padding: 3rem;">
+                            <i class="fa-solid fa-check-circle" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                            <h3 style="margin-bottom: 0.5rem;">All Caught Up!</h3>
+                            <p class="info-text">You have no pending AI suggestions right now. Run an automation cycle to generate more.</p>
+                        </div>
+                    `;
+                    contentArea.className = "";
+                    return;
+                }
+
+                let html = \`
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.2rem; color: var(--text-main);"><i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> \${suggestions.length} Pending AI Insights</h2>
+                    </div>
+                \`;
+
+                suggestions.forEach(sug => {
+                    let icon = 'fa-wand-magic-sparkles';
+                    let typeLabel = 'Content Update';
+                    let btnText = 'Approve Update';
+                    
+                    if (sug.suggestion_type === 'add_skill') {
+                        icon = 'fa-brain';
+                        typeLabel = 'Skill Gap Detected';
+                        btnText = 'Add to Learning Skills';
+                    } else if (sug.suggestion_type === 'remove_skill') {
+                        icon = 'fa-trash-can';
+                        typeLabel = 'Skill Cleanup';
+                        btnText = 'Remove Skill';
+                    }
+
+                    html += \`
+                        <div class="glass-card" style="margin-bottom: 1rem; border-left: 4px solid var(--accent);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 800; display: block; margin-bottom: 0.25rem;">
+                                        <i class="fa-solid \${icon}"></i> \${typeLabel}
+                                    </span>
+                                    <h3 style="color: var(--text-main); font-size: 1.1rem;">\${sug.suggestion_text}</h3>
+                                </div>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">\${new Date(sug.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.25rem;">
+                                <strong>AI Reasoning:</strong> \${sug.ai_reasoning}
+                            </p>
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button class="btn-trigger" style="background: rgba(16, 185, 129, 0.2); color: #4ade80; border: 1px solid rgba(16, 185, 129, 0.4);" onclick="resolveSuggestion(\${sug.id}, 'approved')">
+                                    <i class="fa-solid fa-check"></i> \${btnText}
+                                </button>
+                                <button class="btn-trigger" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);" onclick="resolveSuggestion(\${sug.id}, 'rejected')">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </button>
+                            </div>
+                        </div>
+                    \`;
+                });
+
+                contentArea.innerHTML = html;
+                contentArea.className = "";
+            } catch (error) {
+                document.getElementById('content-area').innerHTML = \`<p style="color: #ef4444;">Error loading suggestions: \${error.message}</p>\`;
+            }
+        }
+
+        async function resolveSuggestion(id, status) {
+            try {
+                await fetch(\`/api/suggestions/\${id}\`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                fetchSuggestionsData(); // Refresh list
+            } catch (error) {
+                alert("Failed to update suggestion: " + error.message);
             }
         }
 
@@ -1251,13 +1429,13 @@
             try {
                 const cookiesText = document.getElementById('cookies-json').value;
                 const cookiesJson = JSON.parse(cookiesText);
-                
+
                 const response = await fetch('/api/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ cookies: cookiesJson })
                 });
-                
+
                 const result = await response.json();
                 if (result.status === 'ok') {
                     btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved successfully!';
