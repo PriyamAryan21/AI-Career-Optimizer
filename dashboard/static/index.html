@@ -1109,9 +1109,8 @@
                 `;
 
                 logs.forEach(log => {
-                    // Supabase stores UTC but returns without 'Z'. Append 'Z' to force UTC parsing, then convert to IST.
-                    const utcDateStr = log.created_at.endsWith('Z') ? log.created_at : log.created_at + 'Z';
-                    const date = new Date(utcDateStr).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                    // Python jsonify returns RFC-1123, which JS Date handles natively.
+                    const date = new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
                     const statusColor = log.status === 'success' ? '#10b981' : (log.status === 'error' ? '#ef4444' : '#fbbf24');
 
                     logsHTML += `
