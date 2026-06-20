@@ -23,6 +23,10 @@ on:
           - trends      # Scrape and analyze trends
           - push        # Test Naukri upload (skips AI/scraping)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # All secrets are injected from GitHub Settings > Secrets
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
