@@ -456,13 +456,13 @@
                 btnEditYaml.style.display = "none";
                 contentArea.className = "";
                 contentArea.innerHTML = `
-                    <div class="glass-card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
+                    <div class="glass-card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1 1 300px;">
                             <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-brain" style="color: var(--accent);"></i> Skill Inventory</h2>
                             <p style="color: var(--text-muted);">Manage your proven and learning skills. These sync directly to your resume and database.</p>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="new-skill-input" placeholder="e.g. Docker" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; width: 150px;">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <input type="text" id="new-skill-input" placeholder="e.g. Docker" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white; width: 150px; flex-grow: 1;">
                             <select id="new-skill-category" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); color: white;">
                                 <option value="learning">Learning</option>
                                 <option value="proven">Proven</option>
@@ -470,7 +470,7 @@
                             <button class="btn-trigger" onclick="addSkill()" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-plus"></i> Add</button>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
                         <div class="glass-card">
                             <h3 style="color: #38bdf8; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> Proven</h3>
                             <div id="skills-proven-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">Loading...</div>
