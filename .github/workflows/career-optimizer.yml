@@ -1,0 +1,85 @@
+name: AI Career Optimizer — Automated Cycle
+
+on:
+  # Runs every 4 days at a random-ish time (6:30 AM IST = 1:00 AM UTC)
+  schedule:
+    - cron: '0 1 */4 * *'
+
+  # Manual trigger from GitHub UI (for testing)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full        # Full update cycle
+          - resume      # Generate resume only
+          - jobs        # Refresh job feed only
+          - gaps        # Run gap analysis only
+
+env:
+  # All secrets are injected from GitHub Settings > Secrets
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  NAUKRI_EMAIL: ${{ secrets.NAUKRI_EMAIL }}
+  NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
+  SMTP_HOST: ${{ secrets.SMTP_HOST }}
+  SMTP_PORT: ${{ secrets.SMTP_PORT }}
+  SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
+  SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+  NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+  ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+  ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+  RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  UPDATE_FREQUENCY_DAYS: '4'
+  JITTER_HOURS: '3'
+  TARGET_ROLES: 'Frontend Developer,Angular Developer,React Developer,Full Stack Developer,.NET Developer'
+  # Force headless mode in CI
+  CI_HEADLESS: 'true'
+
+jobs:
+  run-optimizer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run Optimizer
+        run: |
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          echo "Running mode: $MODE"
+
+          if [ "$MODE" = "full" ]; then
+            python main.py
+          elif [ "$MODE" = "resume" ]; then
+            python main.py --resume
+          elif [ "$MODE" = "jobs" ]; then
+            python main.py --jobs
+          elif [ "$MODE" = "gaps" ]; then
+            python main.py --gaps
+          fi
+
+      - name: Upload Generated Resumes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-resumes-${{ github.run_number }}
+          path: output/resumes/*.pdf
+          retention-days: 30
+          if-no-files-found: ignore
