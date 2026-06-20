@@ -118,8 +118,9 @@ async def scrape_all_roles_async(pages_per_role: int = 2) -> dict[str, list[dict
     total = 0
 
     async with async_playwright() as p:
+        import os
         browser = await p.chromium.launch(
-            headless=False,
+            headless=os.getenv("CI_HEADLESS", "false").lower() == "true",
             args=["--disable-blink-features=AutomationControlled"]
         )
         context = await browser.new_context(
