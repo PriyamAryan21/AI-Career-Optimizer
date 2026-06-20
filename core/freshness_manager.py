@@ -134,15 +134,24 @@ async def run_update_cycle():
                 else:
                     actions_taken.append("Resume upload failed")
 
+            # ── Step 6: Scrape Profile Analytics ──────────────
+            print("\n[6/7] Scraping profile performance analytics...")
+            from core.analytics_scraper import scrape_and_save_analytics
+            analytics_ok = await scrape_and_save_analytics(page)
+            if analytics_ok:
+                actions_taken.append("Scraped and saved profile analytics")
+            else:
+                actions_taken.append("Analytics scraping failed")
+
             await browser.close()
 
     except Exception as e:
-        print(f"   Naukri update failed: {e}")
+        print(f"   Naukri update/analytics failed: {e}")
         notify_error(str(e), "Naukri Profile Update")
         actions_taken.append(f"Naukri push failed: {str(e)[:100]}")
 
-    # ── Step 6: Gap Analysis & Notifications ──────────
-    print("\n[6/6] Running gap analysis & sending notifications...")
+    # ── Step 7: Gap Analysis & Notifications ──────────
+    print("\n[7/7] Running gap analysis & sending notifications...")
     try:
         gap_result = run_full_analysis()
         if gap_result and gap_result.get("suggestions"):

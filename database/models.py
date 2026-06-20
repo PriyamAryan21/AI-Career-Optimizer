@@ -112,14 +112,23 @@ def get_trends_by_role(role, limit=20):
 
 # ── Profile Metrics ────────────────────────────────────
 
-def save_profile_metrics(profile_views, search_appearances=0, recruiter_actions=0):
+def save_profile_metrics(search_appearances_90d=0, search_appearances_7d=0, recruiter_actions_90d=0, activity_level="UNKNOWN", profile_completeness=0):
     conn = _get_connection()
     cur = conn.cursor()
+    
+    # 1. Insert today's metrics
     cur.execute(
-        """INSERT INTO profile_metrics (profile_views, search_appearances, recruiter_actions, metric_date)
-           VALUES (%s, %s, %s, %s)""",
-        (profile_views, search_appearances, recruiter_actions, datetime.now().strftime("%Y-%m-%d"))
+        """INSERT INTO profile_metrics (search_appearances, search_appearances_7d, recruiter_actions, activity_level, profile_completeness, metric_date)
+           VALUES (%s, %s, %s, %s, %s, %s)""",
+        (search_appearances_90d, search_appearances_7d, recruiter_actions_90d, activity_level, profile_completeness, datetime.now().strftime("%Y-%m-%d"))
     )
+    
+    # 2. Garbage Collection: Delete metrics older than 30 days to stay cleanly within the free tier!
+    cur.execute(
+        """DELETE FROM profile_metrics 
+           WHERE metric_date < CURRENT_DATE - INTERVAL '30 days'"""
+    )
+    
     conn.commit()
     cur.close()
     conn.close()
