@@ -470,14 +470,18 @@
                             <button class="btn-trigger" onclick="addSkill()" style="padding: 0.5rem 1rem;"><i class="fa-solid fa-plus"></i> Add</button>
                         </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
                         <div class="glass-card">
-                            <h3 style="color: #38bdf8; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> Proven Skills</h3>
+                            <h3 style="color: #38bdf8; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-check-circle"></i> Proven</h3>
                             <div id="skills-proven-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">Loading...</div>
                         </div>
                         <div class="glass-card">
-                            <h3 style="color: #a855f7; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-book"></i> Learning Skills</h3>
+                            <h3 style="color: #a855f7; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-book"></i> Learning</h3>
                             <div id="skills-learning-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">Loading...</div>
+                        </div>
+                        <div class="glass-card" style="border-color: rgba(251, 191, 36, 0.3);">
+                            <h3 style="color: #fbbf24; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Suggested</h3>
+                            <div id="skills-suggested-list" style="display: flex; flex-direction: column; gap: 0.75rem;">Loading...</div>
                         </div>
                     </div>
                 `;
@@ -740,6 +744,7 @@
         // ── Skills Matrix JS ──
         async function fetchSkillsData() {
             try {
+                // Fetch Profile Skills
                 const response = await fetch('/api/profile');
                 const profile = await response.json();
                 const skills = profile.skills || {proven: [], learning: []};
@@ -762,7 +767,42 @@
                 document.getElementById('skills-proven-list').innerHTML = provenHtml || '<p style="color:var(--text-muted);">No proven skills.</p>';
                 document.getElementById('skills-learning-list').innerHTML = learningHtml || '<p style="color:var(--text-muted);">No learning skills.</p>';
                 
+                // Fetch Gap Analyzer Suggestions
+                const sugRes = await fetch('/api/suggestions');
+                const suggestions = await sugRes.json();
+                const addSkillSugs = (suggestions || []).filter(s => s.suggestion_type === 'add_skill');
+                
+                let sugHtml = addSkillSugs.map(s => `
+                    <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 0.75rem; border-radius: 8px;">
+                        <h4 style="color: var(--text-main); margin-bottom: 0.25rem;">${s.suggestion_text.split(":::")[0]}</h4>
+                        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">${s.ai_reasoning}</p>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn-trigger" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="resolveSuggestionMatrix(${s.id}, 'approved')">
+                                <i class="fa-solid fa-plus"></i> Add to Learning
+                            </button>
+                            <button class="btn-trigger" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="resolveSuggestionMatrix(${s.id}, 'rejected')">
+                                <i class="fa-solid fa-xmark"></i> Dismiss
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('skills-suggested-list').innerHTML = sugHtml || '<p style="color:var(--text-muted);">No AI suggestions currently.</p>';
+                
             } catch(e) { console.error(e); }
+        }
+
+        async function resolveSuggestionMatrix(id, status) {
+            try {
+                await fetch(`/api/suggestions/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                fetchSkillsData(); // Refresh the matrix
+            } catch (error) {
+                console.error("Failed to update suggestion:", error);
+            }
         }
 
         async function addSkill() {
@@ -1050,7 +1090,10 @@
         async function fetchSuggestionsData() {
             try {
                 const response = await fetch('/api/suggestions');
-                const suggestions = await response.json();
+                const allSuggestions = await response.json();
+                // Filter out add_skill because they are handled in the Skills Matrix tab
+                const suggestions = (allSuggestions || []).filter(s => s.suggestion_type !== 'add_skill');
+                
                 const contentArea = document.getElementById('content-area');
 
                 if (!suggestions || suggestions.length === 0) {
@@ -1076,11 +1119,7 @@
                     let typeLabel = 'Content Update';
                     let btnText = 'Approve Update';
                     
-                    if (sug.suggestion_type === 'add_skill') {
-                        icon = 'fa-brain';
-                        typeLabel = 'Skill Gap Detected';
-                        btnText = 'Add to Learning Skills';
-                    } else if (sug.suggestion_type === 'remove_skill') {
+                    if (sug.suggestion_type === 'remove_skill') {
                         icon = 'fa-trash-can';
                         typeLabel = 'Skill Cleanup';
                         btnText = 'Remove Skill';
