@@ -173,7 +173,7 @@ def sync_skill_inventory(profile_data):
             """INSERT INTO skill_inventory (skill_name, category, proficiency)
                VALUES (%s, 'proven', 5)
                ON CONFLICT (skill_name) DO UPDATE 
-               SET category = 'proven', proficiency = 5, last_synced = CURRENT_DATE""",
+               SET category = 'proven', proficiency = 5, updated_at = CURRENT_TIMESTAMP""",
             (skill,)
         )
         
@@ -182,7 +182,7 @@ def sync_skill_inventory(profile_data):
             """INSERT INTO skill_inventory (skill_name, category, proficiency)
                VALUES (%s, 'learning', 2)
                ON CONFLICT (skill_name) DO UPDATE 
-               SET category = 'learning', last_synced = CURRENT_DATE""",
+               SET category = 'learning', updated_at = CURRENT_TIMESTAMP""",
             (skill,)
         )
         
@@ -193,7 +193,7 @@ def sync_skill_inventory(profile_data):
 def get_skill_inventory():
     conn = _get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT skill_name, category, proficiency, date_added, last_synced FROM skill_inventory ORDER BY date_added DESC")
+    cur.execute("SELECT skill_name, category, proficiency, added_at, updated_at FROM skill_inventory ORDER BY added_at DESC")
     columns = [desc[0] for desc in cur.description]
     rows = [dict(zip(columns, row)) for row in cur.fetchall()]
     cur.close()
