@@ -41,6 +41,9 @@ env:
   ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
   RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  FERNET_KEY: ${{ secrets.FERNET_KEY }}
+  DASHBOARD_USERNAME: ${{ secrets.DASHBOARD_USERNAME }}
+  DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
   UPDATE_FREQUENCY_DAYS: '4'
   JITTER_HOURS: '3'
   TARGET_ROLES: 'Frontend Developer,Angular Developer,React Developer,Full Stack Developer,.NET Developer'
