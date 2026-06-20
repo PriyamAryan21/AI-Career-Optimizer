@@ -664,7 +664,7 @@
         }
 
         async function triggerAutomationMode(mode, btn) {
-            if (!confirm(\`Are you sure you want to run the '\${mode}' subroutine? This runs asynchronously.\`)) return;
+            if (!confirm(`Are you sure you want to run the '${mode}' subroutine? This runs asynchronously.`)) return;
 
             const originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executing...';
@@ -678,9 +678,9 @@
                 });
                 const result = await response.json();
                 if (result.status === 'ok') {
-                    alert(\`✅ Success: \${result.message}\`);
+                    alert(`✅ Success: ${result.message}`);
                 } else {
-                    alert(\`❌ Error: \${result.error}\`);
+                    alert(`❌ Error: ${result.error}`);
                 }
             } catch (error) {
                 alert("Request failed: " + error.message);
