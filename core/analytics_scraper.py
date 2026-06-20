@@ -9,7 +9,11 @@ async def scrape_and_save_analytics(page):
     print("   Navigating to analytics homepage...")
     try:
         await page.goto("https://www.naukri.com/mnjuser/performance", wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(5000)  # Wait for React widgets to mount
+        await page.wait_for_timeout(3000)  # Wait for initial React widgets to mount
+        
+        # Scroll to bottom to trigger any lazy-loaded widgets (like Profile Completeness)
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await page.wait_for_timeout(2000)
         
         text_content = await page.locator("body").inner_text()
         
