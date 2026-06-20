@@ -9,17 +9,25 @@ from config.settings import DATABASE_URL
 
 
 from psycopg2 import pool
+import threading
+
 db_pool = None
+pool_lock = threading.Lock()
 
 def _get_connection():
     global db_pool
-    if not db_pool:
-        db_pool = pool.ThreadedConnectionPool(1, 20, DATABASE_URL)
-    return db_pool.getconn()
+    with pool_lock:
+        if not db_pool:
+            db_pool = pool.SimpleConnectionPool(1, 20, DATABASE_URL)
+        return db_pool.getconn()
 
 def _release_connection(conn):
     if db_pool and conn:
-        db_pool.putconn(conn)
+        with pool_lock:
+            try:
+                db_pool.putconn(conn)
+            except Exception as e:
+                print(f"Warning: Failed to release connection: {e}")
 
 
 # ── Action Logs ────────────────────────────────────────
