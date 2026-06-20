@@ -130,9 +130,9 @@ MATCH SCORE: {analysis['match_score']}%
 
 INSTRUCTIONS:
 Generate 5-8 suggestions. Each suggestion must be one of these types:
-- "add_skill": A specific skill to add to my profile
+- "add_skill": A specific, granular ATS-friendly hard skill noun to add (e.g., "Stripe API", "PCI-DSS", "Docker", "PostgreSQL"). DO NOT suggest broad, abstract concepts or soft skills like "Fintech Domain Knowledge" or "Leadership". Only suggest concrete tools, frameworks, protocols, or specific hard technical domains.
 - "remove_skill": A skill to consider removing or de-emphasizing  
-- "update_content": A change to how I present existing skills/experience
+- "update_content": A change to how I present existing skills/experience, or suggesting to add a broad domain expertise (like Fintech) into the profile summary.
 
 For each, explain WHY in 1-2 sentences.
 
