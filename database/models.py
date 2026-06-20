@@ -157,6 +157,49 @@ def get_profile_metrics():
         })
     return metrics
 
+# ── Skill Inventory Sync ───────────────────────────────
+
+def sync_skill_inventory(profile_data):
+    """Syncs master_profile.yaml skills into the database for growth tracking."""
+    conn = _get_connection()
+    cur = conn.cursor()
+    
+    skills_dict = profile_data.get("skills", {})
+    proven = skills_dict.get("proven", [])
+    learning = skills_dict.get("learning", [])
+    
+    for skill in proven:
+        cur.execute(
+            """INSERT INTO skill_inventory (skill_name, category, proficiency)
+               VALUES (%s, 'proven', 5)
+               ON CONFLICT (skill_name) DO UPDATE 
+               SET category = 'proven', proficiency = 5, last_synced = CURRENT_DATE""",
+            (skill,)
+        )
+        
+    for skill in learning:
+        cur.execute(
+            """INSERT INTO skill_inventory (skill_name, category, proficiency)
+               VALUES (%s, 'learning', 2)
+               ON CONFLICT (skill_name) DO UPDATE 
+               SET category = 'learning', last_synced = CURRENT_DATE""",
+            (skill,)
+        )
+        
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def get_skill_inventory():
+    conn = _get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT skill_name, category, proficiency, date_added, last_synced FROM skill_inventory ORDER BY date_added DESC")
+    columns = [desc[0] for desc in cur.description]
+    rows = [dict(zip(columns, row)) for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return rows
+
 
 # ── Resume Versions ────────────────────────────────────
 

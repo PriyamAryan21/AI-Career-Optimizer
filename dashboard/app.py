@@ -78,9 +78,16 @@ def index():
 # ── API: Profile (GET / PUT) ──────────────────────────
 @app.route('/api/profile', methods=['GET'])
 def get_profile():
-    """Return the full master_profile.yaml as JSON."""
+    """Return the full master_profile.yaml as JSON and sync skills."""
+    from database.models import sync_skill_inventory
     try:
         profile = load_master_profile()
+        # Automatically sync skills to DB when dashboard overview loads
+        try:
+            sync_skill_inventory(profile)
+        except Exception as sync_e:
+            print(f"Warning: Failed to sync skill inventory: {sync_e}")
+            
         return jsonify(profile)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
