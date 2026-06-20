@@ -125,50 +125,55 @@ async def load_session(context):
 
 async def validate_session() -> bool:
     """
-    Check if the saved session is still valid by navigating to Naukri profile.
+    Check if the saved session is still valid using a fast, headless HTTP ping.
     Returns True if session is active, False if expired.
     """
-    print("🔄 Validating session...")
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=os.getenv("CI_HEADLESS", "false").lower() == "true",
-            args=['--disable-blink-features=AutomationControlled']
-        )
-
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-        )
-        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-        loaded = await load_session(context)
-        if not loaded:
-            await browser.close()
-            return False
-
-        page = await context.new_page()
-        try:
-            await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=30000)
-            current_url = page.url
-
-            # If redirected to login page, session is expired
-            if "login" in current_url.lower() or "nlogin" in current_url.lower():
+    print("🔄 Fast-validating session cookies via HTTP...")
+    
+    # Try Supabase first
+    session = get_session_status()
+    cookies_json = None
+    if session.get("status") == "active" and session.get("cookies_data"):
+        cookies_json = session["cookies_data"]
+    elif LOCAL_COOKIES_PATH.exists():
+        with open(LOCAL_COOKIES_PATH, "r") as f:
+            cookies_json = f.read()
+            
+    if not cookies_json:
+        print("❌ No saved session found to validate.")
+        return False
+        
+    try:
+        import requests
+        raw_cookies = json.loads(cookies_json)
+        # Convert playwright cookie format to requests cookie dict
+        req_cookies = {c["name"]: c["value"] for c in raw_cookies}
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+        }
+        
+        # Avoid redirects to catch the 302 login redirect directly
+        response = requests.get("https://www.naukri.com/mnjuser/profile", cookies=req_cookies, headers=headers, allow_redirects=False, timeout=10)
+        
+        if response.status_code in [301, 302, 303, 307, 308]:
+            redirect_url = response.headers.get('Location', '').lower()
+            if 'login' in redirect_url or 'nlogin' in redirect_url:
                 print("❌ Session expired — redirected to login page.")
                 update_session_status("expired")
-                await browser.close()
                 return False
-
-            print("✅ Session is valid!")
-            update_session_status("active")
-            await browser.close()
-            return True
-
-        except Exception as e:
-            print(f"❌ Session validation failed: {e}")
-            update_session_status("error")
-            await browser.close()
-            return False
+                
+        # Some anti-bot pages return 200 but have captcha, but for purely checking session viability,
+        # Naukri reliably 302 redirects to /nlogin/login if unauthenticated.
+        print("✅ Fast Session Validation Passed! Cookies are alive.")
+        update_session_status("active")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Fast validation failed with network/parsing error: {e}")
+        update_session_status("error")
+        return False
 
 
 async def ensure_authenticated() -> bool:
