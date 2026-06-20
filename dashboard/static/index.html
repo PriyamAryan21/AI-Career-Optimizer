@@ -1065,11 +1065,11 @@
                     return;
                 }
 
-                let html = \`
+                let html = `
                     <div style="margin-bottom: 1.5rem;">
-                        <h2 style="font-size: 1.2rem; color: var(--text-main);"><i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> \${suggestions.length} Pending AI Insights</h2>
+                        <h2 style="font-size: 1.2rem; color: var(--text-main);"><i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> ${suggestions.length} Pending AI Insights</h2>
                     </div>
-                \`;
+                `;
 
                 suggestions.forEach(sug => {
                     let icon = 'fa-wand-magic-sparkles';
@@ -1086,42 +1086,42 @@
                         btnText = 'Remove Skill';
                     }
 
-                    html += \`
+                    html += `
                         <div class="glass-card" style="margin-bottom: 1rem; border-left: 4px solid var(--accent);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                                 <div>
                                     <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 800; display: block; margin-bottom: 0.25rem;">
-                                        <i class="fa-solid \${icon}"></i> \${typeLabel}
+                                        <i class="fa-solid ${icon}"></i> ${typeLabel}
                                     </span>
-                                    <h3 style="color: var(--text-main); font-size: 1.1rem;">\${sug.suggestion_text}</h3>
+                                    <h3 style="color: var(--text-main); font-size: 1.1rem;">${sug.suggestion_text}</h3>
                                 </div>
-                                <span style="font-size: 0.8rem; color: var(--text-muted);">\${new Date(sug.created_at).toLocaleDateString()}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">${new Date(sug.created_at).toLocaleDateString()}</span>
                             </div>
                             <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.25rem;">
-                                <strong>AI Reasoning:</strong> \${sug.ai_reasoning}
+                                <strong>AI Reasoning:</strong> ${sug.ai_reasoning}
                             </p>
                             <div style="display: flex; gap: 0.75rem;">
-                                <button class="btn-trigger" style="background: rgba(16, 185, 129, 0.2); color: #4ade80; border: 1px solid rgba(16, 185, 129, 0.4);" onclick="resolveSuggestion(\${sug.id}, 'approved')">
-                                    <i class="fa-solid fa-check"></i> \${btnText}
+                                <button class="btn-trigger" style="background: rgba(16, 185, 129, 0.2); color: #4ade80; border: 1px solid rgba(16, 185, 129, 0.4);" onclick="resolveSuggestion(${sug.id}, 'approved')">
+                                    <i class="fa-solid fa-check"></i> ${btnText}
                                 </button>
-                                <button class="btn-trigger" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);" onclick="resolveSuggestion(\${sug.id}, 'rejected')">
+                                <button class="btn-trigger" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);" onclick="resolveSuggestion(${sug.id}, 'rejected')">
                                     <i class="fa-solid fa-xmark"></i> Reject
                                 </button>
                             </div>
                         </div>
-                    \`;
+                    `;
                 });
 
                 contentArea.innerHTML = html;
                 contentArea.className = "";
             } catch (error) {
-                document.getElementById('content-area').innerHTML = \`<p style="color: #ef4444;">Error loading suggestions: \${error.message}</p>\`;
+                document.getElementById('content-area').innerHTML = `<p style="color: #ef4444;">Error loading suggestions: ${error.message}</p>`;
             }
         }
 
         async function resolveSuggestion(id, status) {
             try {
-                await fetch(\`/api/suggestions/\${id}\`, {
+                await fetch(`/api/suggestions/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
