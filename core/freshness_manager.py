@@ -55,25 +55,34 @@ async def run_update_cycle():
     actions_taken.append("Session validated successfully")
     print("   Session is active!")
 
-    # ── Step 2: Scrape Jobs & Analyze Trends ──────────
-    print("\n[2/6] Scraping job market...")
+    # ── Step 2: Fetch Jobs & Analyze Trends ──────────
+    print("\n[2/6] Fetching job market data from APIs...")
     try:
-        scraped_data = await scrape_all_roles_async(pages_per_role=2)
-        total_jobs = sum(len(jobs) for jobs in scraped_data.values())
-        actions_taken.append(f"Scraped {total_jobs} jobs across {len(scraped_data)} roles")
+        from intelligence.job_feed import get_hot_job_feed
+        from config.settings import TARGET_ROLES
+        
+        # Use our free APIs instead of Playwright scraping to bypass Naukri IP blocks
+        all_jobs = get_hot_job_feed(use_ai_scoring=False)
+        total_jobs = len(all_jobs)
+        
+        # Group into a single role to satisfy the trend analyzer schema
+        primary_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
+        scraped_data = {primary_role: all_jobs} if all_jobs else {}
+        
+        actions_taken.append(f"Fetched {total_jobs} jobs via APIs")
 
         if total_jobs > 0:
             print("\n[2b/6] Analyzing trends with Gemini...")
             trends = analyze_trends(scraped_data)
-            actions_taken.append(f"Identified skills across {len(trends)} roles")
+            actions_taken.append(f"Identified skills from {total_jobs} jobs")
         else:
-            print("   No jobs scraped, skipping trend analysis")
+            print("   No jobs fetched, skipping trend analysis")
             trends = {}
 
     except Exception as e:
-        print(f"   Scraping/analysis failed: {e}")
-        notify_error(str(e), "Job Scraping & Trend Analysis")
-        actions_taken.append(f"Scraping failed: {str(e)[:100]}")
+        print(f"   Fetching/analysis failed: {e}")
+        notify_error(str(e), "Job API Fetch & Trend Analysis")
+        actions_taken.append(f"Job fetch failed: {str(e)[:100]}")
         trends = {}
 
     # ── Step 3: Generate Optimized Content ────────────
