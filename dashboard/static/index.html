@@ -671,7 +671,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/trigger', { 
+                const response = await fetch('/api/trigger', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: mode })
@@ -699,7 +699,7 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/trigger', { 
+                const response = await fetch('/api/trigger', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: "full" })
@@ -827,15 +827,15 @@
                 // Fetch Profile Skills
                 const response = await fetch('/api/profile');
                 const profile = await response.json();
-                const skills = profile.skills || {proven: [], learning: []};
-                
+                const skills = profile.skills || { proven: [], learning: [] };
+
                 const provenHtml = (skills.proven || []).map(s => `
                     <span class="skill-badge" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; padding: 0.5rem 0.75rem;">
                         ${s} 
                         <i class="fa-solid fa-trash" style="cursor: pointer; color: var(--text-muted);" onclick="removeSkill('${s}')" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
                     </span>
                 `).join('');
-                
+
                 const learningHtml = (skills.learning || []).map(s => `
                     <span class="skill-badge" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; padding: 0.5rem 0.75rem;">
                         ${s} 
@@ -843,15 +843,15 @@
                         <i class="fa-solid fa-trash" style="cursor: pointer; color: var(--text-muted);" onclick="removeSkill('${s}')" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='var(--text-muted)'"></i>
                     </span>
                 `).join('');
-                
+
                 document.getElementById('skills-proven-list').innerHTML = provenHtml || '<p style="color:var(--text-muted);">No proven skills.</p>';
                 document.getElementById('skills-learning-list').innerHTML = learningHtml || '<p style="color:var(--text-muted);">No learning skills.</p>';
-                
+
                 // Fetch Gap Analyzer Suggestions
                 const sugRes = await fetch('/api/suggestions');
                 const suggestions = await sugRes.json();
                 const addSkillSugs = (suggestions || []).filter(s => s.suggestion_type === 'add_skill');
-                
+
                 let sugHtml = addSkillSugs.map(s => `
                     <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 0.75rem; border-radius: 8px;">
                         <h4 style="color: var(--text-main); margin-bottom: 0.25rem;">${s.suggestion_text.split(":::")[0]}</h4>
@@ -866,10 +866,10 @@
                         </div>
                     </div>
                 `).join('');
-                
+
                 document.getElementById('skills-suggested-list').innerHTML = sugHtml || '<p style="color:var(--text-muted);">No AI suggestions currently.</p>';
-                
-            } catch(e) { console.error(e); }
+
+            } catch (e) { console.error(e); }
         }
 
         async function resolveSuggestionMatrix(id, status) {
@@ -888,12 +888,12 @@
         async function addSkill() {
             const skill = document.getElementById('new-skill-input').value.trim();
             const category = document.getElementById('new-skill-category').value;
-            if(!skill) return;
-            
+            if (!skill) return;
+
             await fetch('/api/skills', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({skill, category})
+                body: JSON.stringify({ skill, category })
             });
             fetchSkillsData();
         }
@@ -902,17 +902,17 @@
             await fetch('/api/skills/move', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({skill})
+                body: JSON.stringify({ skill })
             });
             fetchSkillsData();
         }
 
         async function removeSkill(skill) {
-            if(!confirm(`Remove ${skill}?`)) return;
+            if (!confirm(`Remove ${skill}?`)) return;
             await fetch('/api/skills', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({skill})
+                body: JSON.stringify({ skill })
             });
             fetchSkillsData();
         }
@@ -1173,7 +1173,7 @@
                 const allSuggestions = await response.json();
                 // Filter out add_skill because they are handled in the Skills Matrix tab
                 const suggestions = (allSuggestions || []).filter(s => s.suggestion_type !== 'add_skill');
-                
+
                 const contentArea = document.getElementById('content-area');
 
                 if (!suggestions || suggestions.length === 0) {
@@ -1198,7 +1198,7 @@
                     let icon = 'fa-wand-magic-sparkles';
                     let typeLabel = 'Content Update';
                     let btnText = 'Approve Update';
-                    
+
                     if (sug.suggestion_type === 'remove_skill') {
                         icon = 'fa-trash-can';
                         typeLabel = 'Skill Cleanup';
