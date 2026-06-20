@@ -30,9 +30,19 @@ SESSION_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── API Keys ───────────────────────────────────────────
+# ── API Keys & Auth ──────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD") # Default empty = no auth local, but required in prod
+
+# ── Security & Encryption ──────────────────────────────
+# Generates a volatile fallback key if none provided in .env
+from cryptography.fernet import Fernet
+FERNET_KEY = os.getenv("FERNET_KEY")
+if not FERNET_KEY:
+    FERNET_KEY = Fernet.generate_key().decode()
+    
+fernet_cipher = Fernet(FERNET_KEY.encode())
 
 # ── Naukri ─────────────────────────────────────────────
 NAUKRI_EMAIL = os.getenv("NAUKRI_EMAIL")

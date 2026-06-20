@@ -219,17 +219,23 @@ def save_resume_version(file_path, keywords_used, changes_summary):
 # ── Session State ──────────────────────────────────────
 
 def update_session_status(status, cookies_data=None):
+    from config.settings import fernet_cipher
     conn = _get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id FROM session_state WHERE platform = 'naukri'")
     existing = cur.fetchone()
     now = datetime.now().isoformat()
+    
+    encrypted_cookies = None
+    if cookies_data:
+        encrypted_cookies = fernet_cipher.encrypt(cookies_data.encode()).decode()
+
     if existing:
-        if cookies_data is not None:
+        if encrypted_cookies is not None:
             cur.execute(
                 """UPDATE session_state SET status = %s, last_validated = %s, cookies_data = %s, updated_at = %s
                    WHERE platform = 'naukri'""",
-                (status, now, cookies_data, now)
+                (status, now, encrypted_cookies, now)
             )
         else:
             cur.execute(
@@ -241,7 +247,7 @@ def update_session_status(status, cookies_data=None):
         cur.execute(
             """INSERT INTO session_state (platform, status, last_validated, cookies_data)
                VALUES ('naukri', %s, %s, %s)""",
-            (status, now, cookies_data or "")
+            (status, now, encrypted_cookies or "")
         )
     conn.commit()
     cur.close()
@@ -283,6 +289,7 @@ def save_hot_jobs(jobs: list[dict]):
 
 
 def get_session_status():
+    from config.settings import fernet_cipher
     conn = _get_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM session_state WHERE platform = 'naukri'")
@@ -290,6 +297,15 @@ def get_session_status():
     if row:
         columns = [desc[0] for desc in cur.description]
         result = dict(zip(columns, row))
+        
+        # Decrypt cookies if present
+        if result.get('cookies_data'):
+            try:
+                result['cookies_data'] = fernet_cipher.decrypt(result['cookies_data'].encode()).decode()
+            except Exception as e:
+                print(f"Warning: Failed to decrypt cookies: {e}")
+                result['cookies_data'] = "[]" # Invalidate corrupted/old unencrypted cookies
+                
     else:
         result = {"status": "not_initialized"}
     cur.close()

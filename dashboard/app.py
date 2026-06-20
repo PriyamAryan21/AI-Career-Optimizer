@@ -33,7 +33,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config.settings import (
     load_master_profile, save_master_profile, OUTPUT_DIR,
-    GEMINI_API_KEY, GEMINI_MODEL, TARGET_ROLES, BASE_DIR
+    GEMINI_API_KEY, GEMINI_MODEL, TARGET_ROLES, BASE_DIR,
+    DASHBOARD_PASSWORD
 )
 from database.models import (
     get_action_logs, get_pending_suggestions, resolve_suggestion,
@@ -43,6 +44,18 @@ from database.models import (
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
+# ── Global Security: Basic Auth ────────────────────────
+@app.before_request
+def require_auth():
+    """Enforce HTTP Basic Auth if DASHBOARD_PASSWORD is set."""
+    if DASHBOARD_PASSWORD:
+        # Exclude health check from auth so Render ping works
+        if request.endpoint == 'health_check':
+            return
+            
+        auth = request.authorization
+        if not auth or auth.password != DASHBOARD_PASSWORD or auth.username != "admin":
+            return jsonify({"error": "Authentication required"}), 401, {'WWW-Authenticate': 'Basic realm="Login Required"'}
 
 # ── Helper: Run async in sync context ─────────────────
 def run_async(coro):
