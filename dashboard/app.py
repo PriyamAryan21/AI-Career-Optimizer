@@ -711,14 +711,41 @@ def get_resume_versions():
 # ── API: Trigger Manual Update Cycle ──────────────────
 @app.route('/api/trigger', methods=['POST'])
 def trigger_cycle():
-    """Trigger a full update cycle in a background thread."""
-    def run_cycle():
-        from core.freshness_manager import run
-        run()
+    """
+    Trigger a full update cycle.
+    If GITHUB_TOKEN is set, it triggers the GitHub Actions CI pipeline remotely.
+    Otherwise, it falls back to running the cycle in a local background thread.
+    """
+    github_token = os.getenv("GITHUB_TOKEN")
+    github_repo = os.getenv("GITHUB_REPO")  # e.g. "PriyamAryan21/AI-Career-Optimizer"
     
-    thread = threading.Thread(target=run_cycle, daemon=True)
-    thread.start()
-    return jsonify({"status": "ok", "message": "Update cycle started in background"})
+    # Optional mode (full, gaps, jobs, scrape)
+    mode = request.json.get("mode", "full") if request.is_json else "full"
+
+    if github_token and github_repo:
+        import requests
+        url = f"https://api.github.com/repos/{github_repo}/actions/workflows/career-optimizer.yml/dispatches"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {github_token}"
+        }
+        data = {"ref": "main", "inputs": {"mode": mode}}
+        resp = requests.post(url, headers=headers, json=data)
+        
+        if resp.status_code == 204:
+            return jsonify({"status": "ok", "message": f"GitHub Actions triggered remotely (Mode: {mode})"})
+        else:
+            return jsonify({"error": f"GitHub API failed: {resp.text}"}), 500
+            
+    else:
+        # Local fallback
+        def run_cycle():
+            from core.freshness_manager import run
+            run()
+        
+        thread = threading.Thread(target=run_cycle, daemon=True)
+        thread.start()
+        return jsonify({"status": "ok", "message": "Update cycle started locally in background"})
 
 @app.route('/api/schedule/next')
 def get_next_schedule():
