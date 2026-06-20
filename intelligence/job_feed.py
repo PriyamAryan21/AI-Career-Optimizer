@@ -433,6 +433,19 @@ def _pre_filter_relevant(jobs: list[dict]) -> list[dict]:
     return filtered
 
 
+def fetch_all_api_jobs() -> list[dict]:
+    """
+    Pure data fetching function. Pulls from all configured APIs.
+    No deduplication, no filtering, no DB saving.
+    """
+    all_jobs = []
+    all_jobs.extend(fetch_remotive_jobs(limit=15))
+    all_jobs.extend(fetch_adzuna_jobs(limit=15))
+    all_jobs.extend(fetch_jsearch_jobs(limit=10))
+    # We do NOT include fetch_naukri_cached() here to avoid circular logic
+    return all_jobs
+
+
 # ── Main Feed Function ────────────────────────────────
 def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
     """
@@ -442,12 +455,7 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
     """
     print("\n🔥 Building Hot Job Feed...")
     
-    all_jobs = []
-    
-    # Fetch from all sources
-    all_jobs.extend(fetch_remotive_jobs(limit=15))
-    all_jobs.extend(fetch_adzuna_jobs(limit=15))
-    all_jobs.extend(fetch_jsearch_jobs(limit=10))
+    all_jobs = fetch_all_api_jobs()
     all_jobs.extend(fetch_naukri_cached())
     
     print(f"\n   📊 Total raw jobs: {len(all_jobs)}")
@@ -465,22 +473,15 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
         print("   🧠 Scoring jobs with Gemini...")
         all_jobs = score_jobs_with_ai(all_jobs, top_n=50)
     
-    print(f"   ✅ Hot Job Feed ready: {len(all_jobs)} jobs")
-        # Score with AI
-    if use_ai_scoring and all_jobs:
-        print("   🧠 Scoring jobs with Gemini...")
-        all_jobs = score_jobs_with_ai(all_jobs, top_n=50)
-    
-    # --- NEW DB SAVE LOGIC ---
+    # DB Save Logic
     if all_jobs:
         try:
             from database.models import save_hot_jobs
             # Save only the top 10 best matches
-            save_hot_jobs(all_jobs)
+            save_hot_jobs(all_jobs[:10])
             print("   💾 Saved Top 10 jobs to database.")
         except Exception as e:
             print(f"   ⚠️ Failed to save jobs to DB: {e}")
-    # -------------------------
 
     print(f"   ✅ Hot Job Feed ready: {len(all_jobs)} jobs")
     return all_jobs
