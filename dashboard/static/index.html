@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -357,6 +359,7 @@
         <div class="nav-menu">
             <div class="nav-item active" onclick="showView('overview')"><i class="fa-solid fa-chart-pie"></i> Overview
             </div>
+            <div class="nav-item" onclick="showView('metrics')"><i class="fa-solid fa-chart-line"></i> Performance</div>
             <div class="nav-item" onclick="showView('jobs')"><i class="fa-solid fa-fire"></i> Hot Jobs</div>
             <div class="nav-item" onclick="showView('suggestions')"><i class="fa-solid fa-lightbulb"></i> AI Suggestions
             </div>
@@ -414,6 +417,38 @@
                 contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching profile from backend...</p>";
 
                 fetchOverviewData();
+            } else if (viewId === 'metrics') {
+                pageTitle.innerText = "Performance Metrics";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "";
+                contentArea.innerHTML = `
+                    <div class="glass-card" style="margin-bottom: 1.5rem; text-align: center;">
+                        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-chart-line" style="color: var(--accent);"></i> Algorithmic Performance</h2>
+                        <p style="color: var(--text-muted);">Real-time metrics tracking the AI's impact on Naukri's search algorithm.</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="glass-card" style="text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Search Appearances (90D)</h3>
+                            <div id="kpi-search-90d" style="font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin-top: 0.5rem;">--</div>
+                        </div>
+                        <div class="glass-card" style="text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Search Appearances (7D)</h3>
+                            <div id="kpi-search-7d" style="font-size: 2.5rem; font-weight: 800; color: #a855f7; margin-top: 0.5rem;">--</div>
+                        </div>
+                        <div class="glass-card" style="text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Recruiter Actions</h3>
+                            <div id="kpi-actions" style="font-size: 2.5rem; font-weight: 800; color: #10b981; margin-top: 0.5rem;">--</div>
+                        </div>
+                        <div class="glass-card" style="text-align: center;">
+                            <h3 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Activity / Completeness</h3>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-top: 0.5rem;"><span id="kpi-activity" style="color: #f59e0b;">--</span> / <span id="kpi-completeness">--</span>%</div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <canvas id="metricsChart" width="400" height="150"></canvas>
+                    </div>
+                `;
+                fetchMetricsData();
             } else if (viewId === 'jobs') {
                 pageTitle.innerText = "Hot Job Feed";
                 btnEditYaml.style.display = "none";
@@ -563,6 +598,109 @@
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
+            }
+        }
+
+        let metricsChartInstance = null;
+
+        async function fetchMetricsData() {
+            try {
+                const response = await fetch('/api/metrics');
+                const data = await response.json();
+                
+                if (!data || data.length === 0) {
+                    document.getElementById('content-area').innerHTML += '<p style="color:var(--text-muted); text-align:center;">No metrics data found yet. Run an automation cycle!</p>';
+                    return;
+                }
+                
+                // Update KPIs from latest data point
+                const latest = data[data.length - 1];
+                document.getElementById('kpi-search-90d').innerText = latest.search_app_90d;
+                document.getElementById('kpi-search-7d').innerText = latest.search_app_7d;
+                document.getElementById('kpi-actions').innerText = latest.recruiter_actions;
+                document.getElementById('kpi-activity').innerText = latest.activity_level;
+                document.getElementById('kpi-completeness').innerText = latest.profile_completeness;
+
+                // Prepare Chart Data
+                const labels = data.map(d => d.date);
+                const search90 = data.map(d => d.search_app_90d);
+                const search7 = data.map(d => d.search_app_7d);
+                const actions = data.map(d => d.recruiter_actions);
+
+                const ctx = document.getElementById('metricsChart').getContext('2d');
+                
+                // Destroy old chart if it exists
+                if (metricsChartInstance) {
+                    metricsChartInstance.destroy();
+                }
+
+                // Create sleek dark mode Chart.js config
+                Chart.defaults.color = '#94a3b8';
+                Chart.defaults.font.family = "'Inter', sans-serif";
+
+                metricsChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Search Apps (90D)',
+                                data: search90,
+                                borderColor: '#38bdf8',
+                                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Search Apps (7D)',
+                                data: search7,
+                                borderColor: '#a855f7',
+                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Recruiter Actions',
+                                data: actions,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#cbd5e1',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to load metrics", error);
             }
         }
 

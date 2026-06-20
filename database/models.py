@@ -133,6 +133,30 @@ def save_profile_metrics(search_appearances_90d=0, search_appearances_7d=0, recr
     cur.close()
     conn.close()
 
+def get_profile_metrics():
+    conn = _get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """SELECT metric_date, search_appearances, search_appearances_7d, recruiter_actions, activity_level, profile_completeness
+           FROM profile_metrics
+           ORDER BY metric_date ASC"""
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    metrics = []
+    for r in rows:
+        metrics.append({
+            "date": r[0],
+            "search_app_90d": r[1],
+            "search_app_7d": r[2],
+            "recruiter_actions": r[3],
+            "activity_level": r[4],
+            "profile_completeness": r[5]
+        })
+    return metrics
+
 
 # ── Resume Versions ────────────────────────────────────
 

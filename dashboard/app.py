@@ -60,6 +60,16 @@ def health_check():
     """Lightweight endpoint to keep Render free tier awake."""
     return jsonify({"status": "alive"})
 
+@app.route('/api/metrics')
+def api_metrics():
+    """Returns historical profile performance metrics for visualization."""
+    from database.models import get_profile_metrics
+    try:
+        metrics = get_profile_metrics()
+        return jsonify(metrics)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
