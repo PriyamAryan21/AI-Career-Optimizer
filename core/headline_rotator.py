@@ -159,6 +159,14 @@ async def update_headline_on_naukri(page, headline: str) -> bool:
 
     except Exception as e:
         print(f"   Failed to update headline: {e}")
+        try:
+            await page.screenshot(path="naukri_error.png")
+            with open("naukri_error.html", "w", encoding="utf-8") as f:
+                f.write(await page.content())
+            print("   📸 Saved naukri_error.png and naukri_error.html for debugging.")
+        except Exception as snap_e:
+            print(f"   Could not capture error screenshot: {snap_e}")
+            
         log_action("headline_rotation", f"Failed: {e}", status="failed")
         return False
 

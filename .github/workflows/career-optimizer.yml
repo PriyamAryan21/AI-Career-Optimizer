@@ -102,3 +102,15 @@ jobs:
           path: output/resumes/*.pdf
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Upload Naukri Debug Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: naukri-debug-files-${{ github.run_number }}
+          path: |
+            naukri_error.png
+            naukri_error.html
+            naukri_error_upload.png
+          retention-days: 7
+          if-no-files-found: ignore

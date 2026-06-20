@@ -170,6 +170,12 @@ async def upload_resume_to_naukri(page, pdf_path: str) -> bool:
 
     except Exception as e:
         print(f"   Resume upload failed: {e}")
+        try:
+            await page.screenshot(path="naukri_error_upload.png")
+            print("   📸 Saved naukri_error_upload.png for debugging.")
+        except Exception as snap_e:
+            pass
+            
         log_action("resume_upload", f"Failed: {e}", status="failed")
         return False
 
