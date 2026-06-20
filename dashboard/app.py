@@ -479,7 +479,7 @@ def smart_add_profile_item():
             
             1. Convert this into EXACTLY ONE single, highly professional, impact-driven resume bullet point using the "Situation, Task, Action, Result (STAR) and Google's XYZ formula (Accomplished [X] as measured by [Y], by doing [Z])" framework.
             2. If specific metrics or numbers are missing, INVENT highly realistic, reasonable numbers based on the context.
-            3. STRATEGICALLY use **markdown bolding** on the most critical keywords or metrics.
+            3. STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text.
             
             Return the output strictly in JSON format matching this structure:
             {{
@@ -705,6 +705,7 @@ RULES:
 - Do NOT fabricate experience or skills the candidate doesn't have
 - Make it ATS-friendly with natural keyword inclusion
 - Sound confident and professional
+- STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text.
 
 Return ONLY the rewritten summary paragraph."""
 
@@ -747,7 +748,8 @@ Return ONLY the rewritten bullets as a JSON array of strings."""
             bullets_text = "\n".join(f"- {b}" for b in proj.get("bullets", []))
             proj_prompt = f"""Rewrite these project bullets to better match this job description.
 Keep ALL metrics and facts EXACTLY the same. Only adjust phrasing.
-
+Use the "Situation, Task, Action, Result (STAR) and Google's XYZ formula" framework.
+STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text
 JOB DESCRIPTION:
 {jd_text}
 
