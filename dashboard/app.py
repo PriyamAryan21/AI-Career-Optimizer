@@ -718,7 +718,8 @@ Return ONLY the rewritten summary paragraph."""
             bullets_text = "\n".join(f"- {b}" for b in exp.get("bullets", []))
             exp_prompt = f"""Rewrite these experience bullets to better match this job description.
 Keep ALL metrics, numbers, and facts EXACTLY the same. Only adjust phrasing to emphasize relevant skills.
-
+Use the "Situation, Task, Action, Result (STAR) and Google's XYZ formula" framework.
+STRATEGICALLY use **markdown bolding** on the most critical keywords, technologies, and metrics so a recruiter can understand the entire point just by reading the bold text.
 JOB DESCRIPTION:
 {jd_text}
 
