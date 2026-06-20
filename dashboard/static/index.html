@@ -624,6 +624,12 @@
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
                         <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i> Validate Session (--validate)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Performs a lightning-fast HTTP ping to the Naukri profile page using your encrypted cookies to verify if your session is still active or expired.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('validate', this)" style="width: 100%; justify-content: center; background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3);">Check Session Health</button>
+                        </div>
+
+                        <div class="glass-card">
                             <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-cloud-arrow-up" style="color: #38bdf8;"></i> Force Push (--push)</h3>
                             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Directly uploads the latest generated PDF resume and rotates the headline on Naukri. Bypasses the scraper and AI generation steps to save API limits.</p>
                             <button class="btn-trigger" onclick="triggerAutomationMode('push', this)" style="width: 100%; justify-content: center; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">Execute Push</button>

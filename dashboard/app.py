@@ -865,6 +865,15 @@ def trigger_cycle():
             
     else:
         # Local fallback
+        if mode == "validate":
+            import asyncio
+            from core.auth import validate_session
+            is_valid = asyncio.run(validate_session())
+            if is_valid:
+                return jsonify({"status": "ok", "message": "✅ Validation Complete: Session Cookies are ACTIVE and FRESH."})
+            else:
+                return jsonify({"error": "❌ Validation Complete: Session Cookies are EXPIRED or INVALID."})
+                
         def run_cycle():
             import asyncio
             try:
