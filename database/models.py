@@ -8,9 +8,18 @@ from datetime import datetime
 from config.settings import DATABASE_URL
 
 
+from psycopg2 import pool
+db_pool = None
+
 def _get_connection():
-    """Get a PostgreSQL connection."""
-    return psycopg2.connect(DATABASE_URL)
+    global db_pool
+    if not db_pool:
+        db_pool = pool.ThreadedConnectionPool(1, 20, DATABASE_URL)
+    return db_pool.getconn()
+
+def _release_connection(conn):
+    if db_pool and conn:
+        db_pool.putconn(conn)
 
 
 # ── Action Logs ────────────────────────────────────────
@@ -26,7 +35,7 @@ def log_action(action_type, description, details="",
     )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 def get_action_logs(limit=50):
@@ -36,7 +45,7 @@ def get_action_logs(limit=50):
     columns = [desc[0] for desc in cur.description]
     rows = [dict(zip(columns, row)) for row in cur.fetchall()]
     cur.close()
-    conn.close()
+    _release_connection(conn)
     return rows
 
 
@@ -52,7 +61,7 @@ def add_suggestion(suggestion_type, suggestion_text, ai_reasoning=""):
     )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 def get_pending_suggestions():
@@ -62,7 +71,7 @@ def get_pending_suggestions():
     columns = [desc[0] for desc in cur.description]
     rows = [dict(zip(columns, row)) for row in cur.fetchall()]
     cur.close()
-    conn.close()
+    _release_connection(conn)
     return rows
 
 
@@ -75,7 +84,7 @@ def resolve_suggestion(suggestion_id, status):
     )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 # ── Trend Data ─────────────────────────────────────────
@@ -91,7 +100,7 @@ def save_trend_data(skill_name, role, frequency, total_postings, scraped_date):
     )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 def get_trends_by_role(role, limit=20):
@@ -106,7 +115,7 @@ def get_trends_by_role(role, limit=20):
     columns = [desc[0] for desc in cur.description]
     rows = [dict(zip(columns, row)) for row in cur.fetchall()]
     cur.close()
-    conn.close()
+    _release_connection(conn)
     return rows
 
 
@@ -131,7 +140,7 @@ def save_profile_metrics(search_appearances_90d=0, search_appearances_7d=0, recr
     
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 def get_profile_metrics():
     conn = _get_connection()
@@ -143,7 +152,7 @@ def get_profile_metrics():
     )
     rows = cur.fetchall()
     cur.close()
-    conn.close()
+    _release_connection(conn)
     
     metrics = []
     for r in rows:
@@ -188,7 +197,7 @@ def sync_skill_inventory(profile_data):
         
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 def get_skill_inventory():
     conn = _get_connection()
@@ -197,7 +206,7 @@ def get_skill_inventory():
     columns = [desc[0] for desc in cur.description]
     rows = [dict(zip(columns, row)) for row in cur.fetchall()]
     cur.close()
-    conn.close()
+    _release_connection(conn)
     return rows
 
 
@@ -213,7 +222,7 @@ def save_resume_version(file_path, keywords_used, changes_summary):
     )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 # ── Session State ──────────────────────────────────────
@@ -251,7 +260,7 @@ def update_session_status(status, cookies_data=None):
         )
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 # ── Hot Jobs Feed ──────────────────────────────────────
 
@@ -285,7 +294,7 @@ def save_hot_jobs(jobs: list[dict]):
     
     conn.commit()
     cur.close()
-    conn.close()
+    _release_connection(conn)
 
 
 def get_session_status():
@@ -309,5 +318,5 @@ def get_session_status():
     else:
         result = {"status": "not_initialized"}
     cur.close()
-    conn.close()
+    _release_connection(conn)
     return result

@@ -791,7 +791,21 @@ Return ONLY the rewritten bullets as a JSON array of strings."""
             "optimized_summary": optimized_summary
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"⚠️ JD generation failed (API limits?): {e}")
+        from core.resume_generator import generate_resume_pdf
+        try:
+            pdf_path = generate_resume_pdf()
+            filename = Path(pdf_path).name
+            log_action("jd_resume", f"Fallback to base resume due to AI limit: {e}", status="failed")
+            return jsonify({
+                "status": "ok",
+                "filename": filename,
+                "path": pdf_path,
+                "optimized_summary": "API rate limit exceeded. Generated standard resume.",
+                "message": "AI limits exceeded. Generated base resume instead."
+            })
+        except Exception as fallback_e:
+            return jsonify({"error": f"AI and fallback failed: {fallback_e}"}), 500
 
 
 @app.route('/api/resume/download/<filename>')
