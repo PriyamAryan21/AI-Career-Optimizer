@@ -361,6 +361,7 @@
             <div class="nav-item" onclick="showView('suggestions')"><i class="fa-solid fa-lightbulb"></i> AI Suggestions
             </div>
             <div class="nav-item" onclick="showView('resume')"><i class="fa-solid fa-file-pdf"></i> Resume Builder</div>
+            <div class="nav-item" onclick="showView('session')"><i class="fa-solid fa-cookie-bite"></i> Session Manager</div>
             <div class="nav-item" onclick="showView('logs')"><i class="fa-solid fa-terminal"></i> System Logs</div>
         </div>
     </nav>
@@ -427,6 +428,25 @@
                 contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching pending suggestions...</p>";
 
                 fetchSuggestionsData();
+            } else if (viewId === 'session') {
+                pageTitle.innerText = "Naukri Session Manager";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "";
+                contentArea.innerHTML = `
+                    <div class="glass-card" style="border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 4px 30px rgba(168, 85, 247, 0.1);">
+                        <h2 style="margin-bottom: 1rem;"><i class="fa-solid fa-cookie-bite" style="color: #c084fc;"></i> Cloud Session Cookies</h2>
+                        <p class="info-text" style="margin-bottom: 1.5rem;">To bypass Naukri's OTP requirement on Render, log in to Naukri on your local browser, use an extension like 'EditThisCookie' to export your cookies as JSON, and paste them below.</p>
+                        <form onsubmit="submitSessionCookies(event)">
+                            <div class="form-group">
+                                <label class="form-label">Paste Cookies JSON Here:</label>
+                                <textarea id="cookies-json" class="form-input" rows="8" placeholder='[{"name": "naukri_id", "value": "..."}]' required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="btn-save-cookies">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Save to Supabase Cloud
+                            </button>
+                        </form>
+                    </div>
+                `;
             } else if (viewId === 'resume') {
                 pageTitle.innerText = "Resume Builder & AI Enhancer";
                 btnEditYaml.style.display = "none";
@@ -1080,6 +1100,45 @@
                 }
             } catch (e) {
                 alert("Request failed: " + e.message);
+            }
+        }
+
+        async function submitSessionCookies(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btn-save-cookies');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                const cookiesText = document.getElementById('cookies-json').value;
+                const cookiesJson = JSON.parse(cookiesText);
+                
+                const response = await fetch('/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cookies: cookiesJson })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved successfully!';
+                    btn.style.background = '#10b981';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = 'var(--accent)';
+                        btn.disabled = false;
+                        document.getElementById('cookies-json').value = '';
+                    }, 3000);
+                } else {
+                    alert("Error: " + result.error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Invalid JSON format! Please copy the exact JSON from the extension.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 

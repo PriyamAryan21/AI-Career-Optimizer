@@ -752,6 +752,24 @@ def trigger_cycle():
         thread.start()
         return jsonify({"status": "ok", "message": "Update cycle started locally in background"})
 
+@app.route('/api/session', methods=['POST'])
+def update_session():
+    """Manually update the session cookies from the dashboard."""
+    if not request.is_json:
+        return jsonify({"error": "Missing JSON data"}), 400
+    
+    cookies = request.json.get("cookies", [])
+    if not cookies or not isinstance(cookies, list):
+        return jsonify({"error": "Invalid cookies format. Must be a JSON array of cookies."}), 400
+        
+    try:
+        from database.models import update_session_status
+        cookies_json = json.dumps(cookies)
+        update_session_status("active", cookies_json)
+        return jsonify({"status": "ok", "message": f"Successfully saved {len(cookies)} cookies to Supabase!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/schedule/next')
 def get_next_schedule():
     """Calculate the next scheduled run based on the last successful cycle."""
