@@ -33,6 +33,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 # ── API Keys & Auth ──────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+DASHBOARD_USERNAME = os.getenv("DASHBOARD_USERNAME", "admin")
 DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD") # Default empty = no auth local, but required in prod
 
 # ── Security & Encryption ──────────────────────────────

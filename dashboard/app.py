@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config.settings import (
     load_master_profile, save_master_profile, OUTPUT_DIR,
     GEMINI_API_KEY, GEMINI_MODEL, TARGET_ROLES, BASE_DIR,
-    DASHBOARD_PASSWORD
+    DASHBOARD_USERNAME, DASHBOARD_PASSWORD
 )
 from database.models import (
     get_action_logs, get_pending_suggestions, resolve_suggestion,
@@ -54,7 +54,7 @@ def require_auth():
             return
             
         auth = request.authorization
-        if not auth or auth.password != DASHBOARD_PASSWORD or auth.username != "admin":
+        if not auth or auth.password != DASHBOARD_PASSWORD or auth.username != DASHBOARD_USERNAME:
             return jsonify({"error": "Authentication required"}), 401, {'WWW-Authenticate': 'Basic realm="Login Required"'}
 
 # ── Helper: Run async in sync context ─────────────────
