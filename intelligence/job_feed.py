@@ -133,9 +133,8 @@ def fetch_adzuna_jobs(limit: int = 20) -> list[dict]:
     print("   📡 Fetching from Adzuna (India)...")
     jobs = []
     try:
-        exp_keyword = _get_exp_keyword()
-        for role in TARGET_ROLES[:3]:  # Limit to 3 roles to conserve quota
-            query = f"{role} {exp_keyword}".strip().replace(" ", "%20")
+        for role in TARGET_ROLES[:4]:  # Fetch up to 4 roles
+            query = f"{role}".replace(" ", "%20")
             url = (
                 f"https://api.adzuna.com/v1/api/jobs/in/search/1"
                 f"?app_id={ADZUNA_APP_ID}&app_key={ADZUNA_APP_KEY}"
@@ -185,13 +184,12 @@ def fetch_jsearch_jobs(limit: int = 10) -> list[dict]:
     print("   📡 Fetching from JSearch (LinkedIn/Indeed/Glassdoor)...")
     jobs = []
     try:
-        exp_keyword = _get_exp_keyword()
-        for role in TARGET_ROLES[:2]:  # Only 2 roles to conserve monthly quota
+        for role in TARGET_ROLES[:3]:  # Fetch up to 3 roles
             url = "https://jsearch.p.rapidapi.com/search"
             params = {
-                "query": f"{role} {exp_keyword} in India",
+                "query": f"{role} in India",
                 "page": "1",
-                "num_pages": "1",
+                "num_pages": "2",
                 "date_posted": "week",
             }
             headers = {
@@ -433,6 +431,35 @@ def _pre_filter_relevant(jobs: list[dict]) -> list[dict]:
     return filtered
 
 
+# ── Source 5: Arbeitnow (FREE, no API key) ───────────
+def fetch_arbeitnow_jobs() -> list[dict]:
+    """
+    Fetch jobs from Arbeitnow (Global/Remote).
+    100% free, no API key required.
+    """
+    print("   📡 Fetching from Arbeitnow (Remote/Global)...")
+    jobs = []
+    try:
+        resp = requests.get("https://www.arbeitnow.com/api/job-board-api", timeout=30)
+        if resp.status_code == 200:
+            data = resp.json()
+            for job in data.get("data", []):
+                jobs.append(_normalize_job(
+                    title=job.get("title", ""),
+                    company=job.get("company_name", ""),
+                    location=job.get("location", "Worldwide"),
+                    url=job.get("url", ""),
+                    source="Arbeitnow",
+                    skills=job.get("tags", []),
+                    posted=str(job.get("created_at", ""))[:10],
+                    description=_clean_html(job.get("description", ""))
+                ))
+        print(f"   ✅ Arbeitnow: {len(jobs)} jobs")
+    except Exception as e:
+        print(f"   ⚠️ Arbeitnow failed: {e}")
+    return jobs
+
+
 def fetch_all_api_jobs() -> list[dict]:
     """
     Pure data fetching function. Pulls from all configured APIs.
@@ -440,8 +467,9 @@ def fetch_all_api_jobs() -> list[dict]:
     """
     all_jobs = []
     all_jobs.extend(fetch_remotive_jobs(limit=15))
-    all_jobs.extend(fetch_adzuna_jobs(limit=15))
+    all_jobs.extend(fetch_adzuna_jobs(limit=25))
     all_jobs.extend(fetch_jsearch_jobs(limit=10))
+    all_jobs.extend(fetch_arbeitnow_jobs())
     # We do NOT include fetch_naukri_cached() here to avoid circular logic
     return all_jobs
 
@@ -452,19 +480,39 @@ def fetch_jobs_by_role_api() -> dict[str, list[dict]]:
     This perfectly mimics the output schema of the Playwright scraper
     so the trend analyzer can process each role individually.
     """
-    from config.settings import TARGET_ROLES
+    from config.settings import TARGET_ROLES, load_master_profile
     all_jobs = fetch_all_api_jobs()
+    
+    # Check user experience level
+    profile = load_master_profile()
+    exp_keyword = profile.get("personal", {}).get("experience_keyword", "").lower()
+    is_fresher = "fresher" in exp_keyword or "intern" in exp_keyword or "junior" in exp_keyword
+    senior_titles = {"senior", "sr", "sr.", "lead", "architect", "manager", "principal", "head", "staff", "director"}
     
     partitioned = {role: [] for role in TARGET_ROLES}
     fallback_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
     
     for job in all_jobs:
-        assigned = False
         title_lower = job.get('title', '').lower()
+        
+        # If user is a fresher, drop senior roles to keep trends relevant
+        if is_fresher and any(word in title_lower.split() for word in senior_titles):
+            continue
+            
+        assigned = False
         for role in TARGET_ROLES:
-            # If any significant word from the target role is in the job title
-            role_words = [w.lower() for w in role.split() if len(w) > 2]
-            if any(w in title_lower for w in role_words):
+            # Extract the core technology word (ignore generic titles)
+            core_words = [w.lower() for w in role.split() if w.lower() not in ('developer', 'engineer', 'specialist', 'expert')]
+            # Special case for .NET
+            if role == ".NET Developer" and any(x in title_lower for x in ['.net', 'dotnet', 'c#']):
+                if role not in partitioned: partitioned[role] = []
+                partitioned[role].append(job)
+                assigned = True
+                break
+            
+            # General case: all core words must be in the title
+            if core_words and all(cw in title_lower for cw in core_words):
+                if role not in partitioned: partitioned[role] = []
                 partitioned[role].append(job)
                 assigned = True
                 break
