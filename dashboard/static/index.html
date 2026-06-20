@@ -1042,7 +1042,7 @@
                                 <div>
                                     <h4 style="color: var(--accent); margin-bottom: 0.5rem; font-size: 1.1rem;"><i class="fa-solid ${typeIcon}"></i> ${displayText}</h4>
                                     <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;"><i class="fa-solid fa-robot"></i> <strong>AI Reasoning:</strong> ${s.ai_reasoning}</p>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Generated: ${new Date(s.created_at + (s.created_at.includes('Z') ? '' : 'Z')).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Generated: ${new Date(s.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
                                 </div>
                                 <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
                                     <button class="btn-trigger" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; padding: 0.5rem;" onclick="resolveSuggestion(${s.id}, 'approved')" title="Approve">
