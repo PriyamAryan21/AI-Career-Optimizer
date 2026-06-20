@@ -866,12 +866,51 @@ def trigger_cycle():
     else:
         # Local fallback
         def run_cycle():
-            from core.freshness_manager import run
-            run()
+            import asyncio
+            try:
+                if mode == "full":
+                    from core.freshness_manager import run
+                    run()
+                elif mode == "scrape":
+                    from intelligence.job_feed import fetch_all_api_jobs
+                    fetch_all_api_jobs()
+                elif mode == "trends":
+                    from intelligence.job_feed import fetch_jobs_by_role_api
+                    from intelligence.trend_analyzer import analyze_trends
+                    analyze_trends(fetch_jobs_by_role_api())
+                elif mode == "gaps":
+                    from intelligence.gap_analyzer import run_full_analysis
+                    run_full_analysis()
+                elif mode == "jobs":
+                    from intelligence.job_feed import get_hot_job_feed
+                    get_hot_job_feed(use_ai_scoring=True)
+                elif mode == "push":
+                    from core.auth import get_authenticated_context
+                    from playwright.async_api import async_playwright
+                    from core.headline_rotator import get_next_headline, update_headline_on_naukri
+                    from core.resume_generator import upload_resume_to_naukri
+                    from config.settings import OUTPUT_DIR, NAUKRI_PROFILE_URL
+                    async def push_test():
+                        async with async_playwright() as p:
+                            browser, context = await get_authenticated_context(p)
+                            try:
+                                page = await context.new_page()
+                                await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded")
+                                new_headline = get_next_headline(use_ai=False)
+                                await update_headline_on_naukri(page, new_headline)
+                                pdfs = list(OUTPUT_DIR.glob("*.pdf"))
+                                if pdfs:
+                                    latest_pdf = max(pdfs, key=lambda x: x.stat().st_mtime)
+                                    await upload_resume_to_naukri(page, str(latest_pdf))
+                            finally:
+                                await browser.close()
+                    asyncio.run(push_test())
+            except Exception as e:
+                print(f"Background task {mode} failed: {e}")
         
         thread = threading.Thread(target=run_cycle, daemon=True)
         thread.start()
-        return jsonify({"status": "ok", "message": "Update cycle started locally in background"})
+        return jsonify({"status": "ok", "message": f"Task '{mode}' started locally in background"})
 
 @app.route('/api/session', methods=['POST'])
 def update_session():

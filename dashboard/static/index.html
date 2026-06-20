@@ -368,6 +368,7 @@
             <div class="nav-item" onclick="showView('session')"><i class="fa-solid fa-cookie-bite"></i> Session Manager
             </div>
             <div class="nav-item" onclick="showView('logs')"><i class="fa-solid fa-terminal"></i> System Logs</div>
+            <div class="nav-item" onclick="showView('quicklinks')"><i class="fa-solid fa-bolt"></i> Quick Links</div>
         </div>
     </nav>
 
@@ -611,11 +612,80 @@
                 contentArea.className = "glass-card";
                 contentArea.innerHTML = "<p style='color: var(--text-muted);'>Fetching system logs...</p>";
                 fetchLogsData();
+            } else if (viewId === 'quicklinks') {
+                pageTitle.innerText = "Quick Links & Controls";
+                btnEditYaml.style.display = "none";
+                contentArea.className = "";
+                contentArea.innerHTML = `
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> System Control Panel</h2>
+                        <p style="color: var(--text-muted);">Manually trigger individual micro-services and automation sub-routines.</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-cloud-arrow-up" style="color: #38bdf8;"></i> Force Push (--push)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Directly uploads the latest generated PDF resume and rotates the headline on Naukri. Bypasses the scraper and AI generation steps to save API limits.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('push', this)" style="width: 100%; justify-content: center; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">Execute Push</button>
+                        </div>
+                        
+                        <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-magnifying-glass-chart" style="color: #a855f7;"></i> Analyze Gaps (--gaps)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Forces the Gemini AI to analyze your current profile against the latest fetched job market trends to generate new ATS hard-skill suggestions.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('gaps', this)" style="width: 100%; justify-content: center; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);">Run Gap Analysis</button>
+                        </div>
+                        
+                        <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-arrow-trend-up" style="color: #10b981;"></i> Update Trends (--trends)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Scrapes the latest job postings from Adzuna and RapidAPI, then uses AI to extract and count the frequency of required skills across your target roles.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('trends', this)" style="width: 100%; justify-content: center; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">Analyze Trends</button>
+                        </div>
+                        
+                        <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-spider" style="color: #f59e0b;"></i> Raw Scrape (--scrape)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Fast API fetch for job postings without running the heavy NLP trend extraction. Useful for verifying API keys or building a local cache of listings.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('scrape', this)" style="width: 100%; justify-content: center; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">Start Scraper</button>
+                        </div>
+                        
+                        <div class="glass-card">
+                            <h3 style="color: var(--text-main); margin-bottom: 0.5rem;"><i class="fa-solid fa-fire" style="color: #ef4444;"></i> Score Jobs (--jobs)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Calculates an AI semantic match score for all recently scraped jobs against your master profile to update the Hot Jobs dashboard feed.</p>
+                            <button class="btn-trigger" onclick="triggerAutomationMode('jobs', this)" style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">Score Hot Jobs</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function triggerAutomationMode(mode, btn) {
+            if (!confirm(\`Are you sure you want to run the '\${mode}' subroutine? This runs asynchronously.\`)) return;
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executing...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/trigger', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: mode })
+                });
+                const result = await response.json();
+                if (result.status === 'ok') {
+                    alert(\`✅ Success: \${result.message}\`);
+                } else {
+                    alert(\`❌ Error: \${result.error}\`);
+                }
+            } catch (error) {
+                alert("Request failed: " + error.message);
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         }
 
         async function triggerAutomation() {
-            if (!confirm("Are you sure you want to trigger a manual automation cycle? This will run in the background and might take a few minutes.")) return;
+            if (!confirm("Are you sure you want to trigger a full manual automation cycle? This will run in the background and might take a few minutes.")) return;
 
             const btn = document.getElementById('btn-run-automation');
             const originalHtml = btn.innerHTML;
@@ -623,7 +693,11 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch('/api/trigger', { method: 'POST' });
+                const response = await fetch('/api/trigger', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: "full" })
+                });
                 const result = await response.json();
                 if (result.status === 'ok') {
                     alert("Automation cycle started successfully in the background!");
