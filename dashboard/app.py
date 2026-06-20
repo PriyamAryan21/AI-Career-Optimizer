@@ -55,6 +55,11 @@ def run_async(coro):
 
 
 # ── Dashboard Home ─────────────────────────────────────
+@app.route('/api/health')
+def health_check():
+    """Lightweight endpoint to keep Render free tier awake."""
+    return jsonify({"status": "alive"})
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
