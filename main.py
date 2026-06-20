@@ -39,13 +39,10 @@ def main():
         print(f"\nSuccessfully fetched {len(jobs)} jobs across all sources.")
 
     elif "--trends" in args:
-        from intelligence.job_feed import fetch_all_api_jobs
+        from intelligence.job_feed import fetch_jobs_by_role_api
         from intelligence.trend_analyzer import analyze_trends
-        from config.settings import TARGET_ROLES
         
-        all_jobs = fetch_all_api_jobs()
-        primary_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
-        scraped = {primary_role: all_jobs} if all_jobs else {}
+        scraped = fetch_jobs_by_role_api()
         
         trends = analyze_trends(scraped)
         for role, skills in trends.items():

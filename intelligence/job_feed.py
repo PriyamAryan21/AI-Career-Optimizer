@@ -446,6 +446,38 @@ def fetch_all_api_jobs() -> list[dict]:
     return all_jobs
 
 
+def fetch_jobs_by_role_api() -> dict[str, list[dict]]:
+    """
+    Fetches all jobs from APIs and partitions them by TARGET_ROLES.
+    This perfectly mimics the output schema of the Playwright scraper
+    so the trend analyzer can process each role individually.
+    """
+    from config.settings import TARGET_ROLES
+    all_jobs = fetch_all_api_jobs()
+    
+    partitioned = {role: [] for role in TARGET_ROLES}
+    fallback_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
+    
+    for job in all_jobs:
+        assigned = False
+        title_lower = job.get('title', '').lower()
+        for role in TARGET_ROLES:
+            # If any significant word from the target role is in the job title
+            role_words = [w.lower() for w in role.split() if len(w) > 2]
+            if any(w in title_lower for w in role_words):
+                partitioned[role].append(job)
+                assigned = True
+                break
+        
+        if not assigned:
+            if fallback_role not in partitioned:
+                partitioned[fallback_role] = []
+            partitioned[fallback_role].append(job)
+            
+    # Remove empty roles
+    return {k: v for k, v in partitioned.items() if v}
+
+
 # ── Main Feed Function ────────────────────────────────
 def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
     """
@@ -478,8 +510,8 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
         try:
             from database.models import save_hot_jobs
             # Save only the top 10 best matches
-            save_hot_jobs(all_jobs[:10])
-            print("   💾 Saved Top 10 jobs to database.")
+            save_hot_jobs(all_jobs[:20])
+            print("   💾 Saved Top 20 jobs to database.")
         except Exception as e:
             print(f"   ⚠️ Failed to save jobs to DB: {e}")
 
@@ -498,7 +530,7 @@ if __name__ == "__main__":
     print(f"  TOP 10 MATCHING JOBS")
     print(f"{'='*70}")
     
-    for i, job in enumerate(jobs[:10], 1):
+    for i, job in enumerate(jobs[:20], 1):
         print(f"\n  #{i} [{job['match_score']}% match] {job['title']}")
         print(f"     🏢 {job['company']} | 📍 {job['location']}")
         print(f"     📡 Source: {job['source']}")

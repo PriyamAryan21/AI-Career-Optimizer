@@ -209,16 +209,61 @@ def raw_profile_yaml():
             data = request.get_json()
             yaml_content = data.get("yaml", "")
             
-            # Validate YAML
+            # 1. Validate YAML Syntax
             import yaml
-            yaml.safe_load(yaml_content)
+            parsed_data = yaml.safe_load(yaml_content)
             
+            # 2. Validate YAML Schema (Structure)
+            if not isinstance(parsed_data, dict):
+                raise ValueError("YAML must represent a dictionary at the root level.")
+            
+            # Prevent accidental root-level keys (like typing -hlloe: at the far left)
+            allowed_keys = {
+                "personal", "headline_pool", "skills", "experience", 
+                "projects", "education", "achievements", "certifications", 
+                "preferences", "extra_curriculars"
+            }
+            for key in parsed_data.keys():
+                if key not in allowed_keys:
+                    raise ValueError(f"Unknown section '{key}' found. Only standard profile sections are allowed.")
+
+            if "personal" not in parsed_data or not isinstance(parsed_data["personal"], dict):
+                raise ValueError("Missing or invalid 'personal' section.")
+                
+            if "name" not in parsed_data["personal"]:
+                raise ValueError("'personal' section must contain 'name'.")
+
+            # Ensure lists remain lists AND contain the right type of data
+            dict_list_fields = ["experience", "projects", "education", "extra_curriculars"]
+            for field in dict_list_fields:
+                if field in parsed_data and parsed_data[field] is not None:
+                    if not isinstance(parsed_data[field], list):
+                        raise ValueError(f"'{field}' must be a list (bullet points).")
+                    for item in parsed_data[field]:
+                        if not isinstance(item, dict):
+                            raise ValueError(f"Every item inside '{field}' must be a structured block, not a plain string.")
+
+            # Achievements is a list of strings
+            if "achievements" in parsed_data and parsed_data["achievements"] is not None:
+                if not isinstance(parsed_data["achievements"], list):
+                    raise ValueError("'achievements' must be a list.")
+
+            # Ensure skills remains a dict
+            if "skills" in parsed_data and parsed_data["skills"] is not None:
+                if not isinstance(parsed_data["skills"], dict):
+                    raise ValueError("'skills' must be a dictionary with categories like 'proven', 'learning'.")
+
+            # 3. Save if perfectly valid
             profile_path.write_text(yaml_content, encoding="utf-8")
             log_action("profile_update", "Updated raw YAML profile", status="success")
             return jsonify({"status": "ok"})
+            
+        except yaml.YAMLError as e:
+            return jsonify({"error": f"YAML Syntax Error: {str(e)}"}), 400
+        except ValueError as e:
+            return jsonify({"error": f"Schema Validation Error: {str(e)}"}), 400
         except Exception as e:
-            # Catching generic Exception covers YAMLError and others
-            return jsonify({"error": f"Invalid YAML: {str(e)}"}), 400
+            return jsonify({"error": f"Unexpected Error: {str(e)}"}), 500
 
 
 
@@ -761,4 +806,15 @@ def get_job_sources():
 
 # ── Run ───────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, port=5000)
+    import sys
+    if '--dev' in sys.argv:
+        # Development mode: Flask's built-in server with debug output
+        print("🔧 Running in DEVELOPMENT mode (Flask debug server)")
+        app.run(debug=True, use_reloader=False, port=5000)
+    else:
+        # Production mode: Waitress WSGI server
+        from waitress import serve
+        print("🚀 Running in PRODUCTION mode (Waitress)")
+        print("   Dashboard: http://localhost:5000")
+        serve(app, host='0.0.0.0', port=5000, threads=4)
+

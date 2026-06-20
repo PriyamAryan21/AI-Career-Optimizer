@@ -58,16 +58,11 @@ async def run_update_cycle():
     # ── Step 2: Fetch Jobs & Analyze Trends ──────────
     print("\n[2/6] Fetching job market data from APIs...")
     try:
-        from intelligence.job_feed import fetch_all_api_jobs
-        from config.settings import TARGET_ROLES
+        from intelligence.job_feed import fetch_jobs_by_role_api
         
         # Use our free APIs instead of Playwright scraping to bypass Naukri IP blocks
-        all_jobs = fetch_all_api_jobs()
-        total_jobs = len(all_jobs)
-        
-        # Group into a single role to satisfy the trend analyzer schema
-        primary_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
-        scraped_data = {primary_role: all_jobs} if all_jobs else {}
+        scraped_data = fetch_jobs_by_role_api()
+        total_jobs = sum(len(jobs) for jobs in scraped_data.values())
         
         actions_taken.append(f"Fetched {total_jobs} jobs via APIs")
 
