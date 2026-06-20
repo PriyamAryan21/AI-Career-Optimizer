@@ -92,7 +92,31 @@ async def load_session(context):
 
     try:
         cookies = json.loads(cookies_json)
-        await context.add_cookies(cookies)
+        
+        # Sanitize cookies from external extensions (like EditThisCookie)
+        sanitized_cookies = []
+        for c in cookies:
+            # Remove invalid keys
+            c.pop('id', None)
+            c.pop('storeId', None)
+            c.pop('hostOnly', None)
+            c.pop('session', None)
+            
+            # Map sameSite values to Playwright compatible ones
+            if 'sameSite' in c:
+                ss = c['sameSite'].lower()
+                if ss == 'no_restriction':
+                    c['sameSite'] = 'None'
+                elif ss == 'lax':
+                    c['sameSite'] = 'Lax'
+                elif ss == 'strict':
+                    c['sameSite'] = 'Strict'
+                else:
+                    c.pop('sameSite', None)  # Remove unspecified
+            
+            sanitized_cookies.append(c)
+            
+        await context.add_cookies(sanitized_cookies)
         return True
     except (json.JSONDecodeError, Exception) as e:
         print(f"❌ Failed to parse cookies: {e}")
