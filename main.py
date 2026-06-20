@@ -39,9 +39,14 @@ def main():
             print(f"  {role}: {len(jobs)} jobs")
 
     elif "--trends" in args:
-        from intelligence.job_scraper import scrape_all_roles
+        from intelligence.job_feed import get_hot_job_feed
         from intelligence.trend_analyzer import analyze_trends
-        scraped = scrape_all_roles(pages_per_role=1)
+        from config.settings import TARGET_ROLES
+        
+        all_jobs = get_hot_job_feed(use_ai_scoring=False)
+        primary_role = TARGET_ROLES[0] if TARGET_ROLES else "Software Engineer"
+        scraped = {primary_role: all_jobs} if all_jobs else {}
+        
         trends = analyze_trends(scraped)
         for role, skills in trends.items():
             print(f"\n  {role}:")
