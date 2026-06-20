@@ -41,6 +41,15 @@ def log_action(action_type, description, details="",
            VALUES (%s, %s, %s, %s, %s, %s)""",
         (action_type, description, details, diff_before, diff_after, status)
     )
+    # Maintain max 200 logs
+    cur.execute(
+        """DELETE FROM action_logs 
+           WHERE id NOT IN (
+               SELECT id FROM action_logs 
+               ORDER BY created_at DESC 
+               LIMIT 200
+           )"""
+    )
     conn.commit()
     cur.close()
     _release_connection(conn)
