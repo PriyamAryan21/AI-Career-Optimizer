@@ -142,23 +142,30 @@ def save_resume_version(file_path, keywords_used, changes_summary):
 
 # ── Session State ──────────────────────────────────────
 
-def update_session_status(status, cookies_data=""):
+def update_session_status(status, cookies_data=None):
     conn = _get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id FROM session_state WHERE platform = 'naukri'")
     existing = cur.fetchone()
     now = datetime.now().isoformat()
     if existing:
-        cur.execute(
-            """UPDATE session_state SET status = %s, last_validated = %s, cookies_data = %s, updated_at = %s
-               WHERE platform = 'naukri'""",
-            (status, now, cookies_data, now)
-        )
+        if cookies_data is not None:
+            cur.execute(
+                """UPDATE session_state SET status = %s, last_validated = %s, cookies_data = %s, updated_at = %s
+                   WHERE platform = 'naukri'""",
+                (status, now, cookies_data, now)
+            )
+        else:
+            cur.execute(
+                """UPDATE session_state SET status = %s, last_validated = %s, updated_at = %s
+                   WHERE platform = 'naukri'""",
+                (status, now, now)
+            )
     else:
         cur.execute(
             """INSERT INTO session_state (platform, status, last_validated, cookies_data)
                VALUES ('naukri', %s, %s, %s)""",
-            (status, now, cookies_data)
+            (status, now, cookies_data or "")
         )
     conn.commit()
     cur.close()
