@@ -18,6 +18,10 @@ on:
           - resume      # Generate resume only
           - jobs        # Refresh job feed only
           - gaps        # Run gap analysis only
+          - validate    # Validate Naukri session
+          - scrape      # Scrape jobs only
+          - trends      # Scrape and analyze trends
+          - push        # Test Naukri upload (skips AI/scraping)
 
 env:
   # All secrets are injected from GitHub Settings > Secrets
@@ -73,6 +77,14 @@ jobs:
             python main.py --jobs
           elif [ "$MODE" = "gaps" ]; then
             python main.py --gaps
+          elif [ "$MODE" = "validate" ]; then
+            python main.py --validate
+          elif [ "$MODE" = "scrape" ]; then
+            python main.py --scrape
+          elif [ "$MODE" = "trends" ]; then
+            python main.py --trends
+          elif [ "$MODE" = "push" ]; then
+            python main.py --push
           fi
 
       - name: Upload Generated Resumes
