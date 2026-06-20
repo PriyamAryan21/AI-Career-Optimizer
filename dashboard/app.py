@@ -20,7 +20,7 @@ import sys
 import os
 import re
 import threading
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
@@ -629,11 +629,14 @@ def get_logs():
     try:
         limit = request.args.get('limit', 50, type=int)
         logs = get_action_logs(limit=limit)
-        # Convert datetime objects to strings for JSON serialization
+        # Convert datetime objects to strings for JSON serialization in IST
+        ist_tz = timezone(timedelta(hours=5, minutes=30))
         for log in logs:
             for key, value in log.items():
                 if isinstance(value, datetime):
-                    log[key] = value.isoformat()
+                    if value.tzinfo is None:
+                        value = value.replace(tzinfo=timezone.utc)
+                    log[key] = value.astimezone(ist_tz).isoformat()
         return jsonify(logs)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -988,12 +991,23 @@ def get_hot_jobs():
         conn = _get_connection()
         cur = conn.cursor()
         
-        cur.execute("SELECT * FROM hot_jobs ORDER BY match_score DESC, id ASC")
+        cur.execute("SELECT * FROM hot_jobs WHERE match_score > 0 ORDER BY match_score DESC, id ASC")
         columns = [desc[0] for desc in cur.description]
+        
+        profile = load_master_profile()
+        exp_keyword = profile.get("personal", {}).get("experience_keyword", "").lower()
+        is_fresher = "fresher" in exp_keyword or "intern" in exp_keyword or "junior" in exp_keyword
+        senior_titles = {"senior", "sr", "sr.", "lead", "architect", "manager", "principal", "head", "staff", "director"}
         
         jobs = []
         for row in cur.fetchall():
             job_dict = dict(zip(columns, row))
+            
+            # Filter senior roles for freshers
+            title_lower = job_dict.get("title", "").lower()
+            if is_fresher and any(word in title_lower.split() for word in senior_titles):
+                continue
+                
             # Convert comma-separated string back to list for the frontend
             if job_dict.get("skills"):
                 job_dict["skills"] = job_dict["skills"].split(",")

@@ -122,7 +122,8 @@ async def update_headline_on_naukri(page, headline: str) -> bool:
             "div:has-text('Resume Headline') span[class*='edit'], "
             "div:has-text('Resume Headline') i[class*='edit']"
         ).first
-        await edit_btn.click(timeout=10000)
+        # Increased timeout to 30000ms to allow Cloudflare/bot challenges to clear
+        await edit_btn.click(timeout=30000)
         await page.wait_for_timeout(1000)
 
         # Find the headline/resume title input field

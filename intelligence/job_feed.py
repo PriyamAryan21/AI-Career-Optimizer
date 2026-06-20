@@ -303,9 +303,74 @@ def _deduplicate(jobs: list[dict]) -> list[dict]:
 
 
 # ── AI Match Scoring ──────────────────────────────────
-def score_jobs_with_ai(jobs: list[dict], top_n: int = 30) -> list[dict]:
+
+def _heuristic_pre_score(job: dict, user_skills_lower: set, role_keywords: set, is_fresher: bool) -> int:
+    """
+    Fast heuristic to pre-rank jobs before sending the best ones to Gemini.
+    Also used as the intelligent fallback scorer for jobs beyond AI batch limits.
+    Scores 0-100 based on title relevance, skill overlap, and description signals.
+    """
+    score = 0
+    title_lower = job.get("title", "").lower()
+    desc_lower = job.get("description", "").lower()
+    job_skills_lower = set(s.lower() for s in job.get("skills", []))
+
+    # ── Title relevance (0-40 pts) ──
+    # Direct role keyword match in title
+    title_words = set(title_lower.split())
+    role_hits = len(role_keywords & title_words)
+    score += min(role_hits * 15, 30)
+    # Bonus for exact target role substring match
+    from config.settings import TARGET_ROLES
+    for role in TARGET_ROLES:
+        if role.lower() in title_lower:
+            score += 10
+            break
+
+    # ── Skill overlap (0-40 pts) ──
+    # Check skills list AND description for user's skills
+    skill_hits = len(user_skills_lower & job_skills_lower)
+    # Also check description text for skills not in the tags
+    for skill in user_skills_lower:
+        if skill in desc_lower and skill not in job_skills_lower:
+            skill_hits += 0.5  # Partial credit for description mentions
+    score += min(int(skill_hits * 8), 40)
+
+    # ── Experience fit (0-20 pts) ──
+    senior_signals = {"senior", "sr", "sr.", "lead", "principal", "staff", "architect", "head", "director", "manager"}
+    if is_fresher:
+        if any(word in title_words for word in senior_signals):
+            score -= 30  # Heavy penalty
+        # Check description for explicit years requirement
+        import re
+        years_match = re.search(r'(\d+)\+?\s*(?:to|-|–)\s*(\d+)?\s*(?:years?|yrs?)', desc_lower)
+        if years_match:
+            min_years = int(years_match.group(1))
+            if min_years >= 3:
+                score -= 25  # Requires too much experience
+            elif min_years >= 2:
+                score -= 10  # Borderline
+        elif re.search(r'(\d+)\+\s*(?:years?|yrs?)', desc_lower):
+            num = int(re.search(r'(\d+)\+\s*(?:years?|yrs?)', desc_lower).group(1))
+            if num >= 3:
+                score -= 25
+        # Bonus for fresher-friendly signals
+        fresher_signals = {"fresher", "entry level", "entry-level", "intern", "graduate", "junior", "0-1", "0-2", "sde 1", "sde-1", "sde1"}
+        if any(sig in title_lower or sig in desc_lower for sig in fresher_signals):
+            score += 15
+    else:
+        score += 10  # Neutral for non-freshers
+
+    return max(0, min(score, 100))
+
+
+def score_jobs_with_ai(jobs: list[dict], top_n: int = 50) -> list[dict]:
     """
     Use Gemini to score each job's match against the user's profile.
+    Strategy:
+      1. Pre-score ALL jobs with a fast heuristic to rank them
+      2. Send only the top candidates to Gemini in batches for precise scoring
+      3. Keep heuristic scores for the rest
     Returns jobs sorted by match_score (highest first).
     """
     if not jobs:
@@ -313,33 +378,67 @@ def score_jobs_with_ai(jobs: list[dict], top_n: int = 30) -> list[dict]:
     
     profile = load_master_profile()
     user_skills = profile.get("skills", {}).get("proven", [])
+    user_skills_lower = set(s.lower() for s in user_skills)
     user_summary = profile.get("personal", {}).get("summary", "")
     user_roles = TARGET_ROLES
     user_experience = profile.get("personal", {}).get("experience_level", "Entry Level / Fresher")
+    exp_keyword = profile.get("personal", {}).get("experience_keyword", "").lower()
+    is_fresher = "fresher" in exp_keyword or "intern" in exp_keyword or "junior" in exp_keyword
 
-    # Build a compact job list for the AI prompt
+    # Build role keywords for heuristic matching
+    role_keywords = set()
+    for role in user_roles:
+        for word in role.lower().split():
+            if len(word) > 2 and word not in {"the", "and", "for"}:
+                role_keywords.add(word)
+
+    # ── Step 1: Pre-score ALL jobs with heuristic ──
+    for job in jobs:
+        job["_heuristic_score"] = _heuristic_pre_score(job, user_skills_lower, role_keywords, is_fresher)
+    
+    # Sort by heuristic so the best candidates are sent to Gemini
+    jobs.sort(key=lambda x: x["_heuristic_score"], reverse=True)
+    
+    # ── Step 2: Send top candidates to Gemini in batches ──
+    BATCH_SIZE = 25  # Sweet spot for gemini-flash-lite accuracy
+    ai_limit = min(top_n, len(jobs))
+    ai_candidates = jobs[:ai_limit]
+    
+    # Build job summaries WITH description snippets so Gemini can see experience requirements
     job_summaries = []
-    for i, job in enumerate(jobs[:top_n]):
+    for i, job in enumerate(ai_candidates):
+        desc_snippet = job.get("description", "")[:120].replace("\n", " ").strip()
         job_summaries.append(
             f"{i}: {job['title']} @ {job['company']} | "
             f"Skills: {', '.join(job['skills'][:8]) if job['skills'] else 'N/A'} | "
-            f"Loc: {job['location']}"
+            f"Loc: {job['location']} | "
+            f"Desc: {desc_snippet if desc_snippet else 'N/A'}"
         )
 
-    prompt = f"""You are a career advisor. Score each job's match against this candidate's profile.
-CANDIDATE:
+    prompt = f"""You are a career match-scoring engine. Score EACH job against this candidate.
+CANDIDATE PROFILE:
 - Target roles: {', '.join(user_roles)}
-- Skills: {', '.join(user_skills)}
-- Experience Level: {user_experience}
+- Core skills: {', '.join(user_skills)}
+- Experience level: {user_experience}
 - Summary: {user_summary[:200]}
-JOBS:
+
+JOBS TO SCORE:
 {chr(10).join(job_summaries)}
-For EACH job, return a match score from 0-100 based on:
-- Skill overlap (40%)
-- Role relevance (30%)
-- Experience level fit (30%). CRITICAL: Use the candidate's 'Experience Level' to strictly evaluate match. Severely penalize (score < 40) jobs requiring more experience than the candidate has.
-Return ONLY a JSON array of objects: [{{"index": 0, "score": 85}}, ...]
-No markdown, no explanation."""
+
+SCORING RUBRIC (total 100 points):
+1. SKILL OVERLAP (40 pts): How many of the candidate's core skills match the job's requirements? Check both the skills tags AND the description text.
+2. ROLE RELEVANCE (30 pts): Does the job title closely match one of the candidate's target roles?
+3. EXPERIENCE FIT (30 pts): Does the job's required experience level match the candidate? 
+   - The candidate is a FRESHER with only 3 months of internship experience.
+   - Jobs requiring 0-1 years: Full 30 points
+   - Jobs requiring 1-2 years: 20 points  
+   - Jobs requiring 2-3 years: 10 points
+   - Jobs requiring 3+ years: 0 points
+   - Senior/Lead/Architect/Staff roles: 0 points
+
+IMPORTANT: Score each job INDIVIDUALLY. Do NOT give the same score to multiple jobs unless they are truly identical matches. Differentiate based on specific skill requirements and experience levels mentioned in descriptions.
+
+Return a JSON array: [{{"index": 0, "score": 85}}, ...]"""
 
     try:
         import google.generativeai as genai
@@ -347,26 +446,70 @@ No markdown, no explanation."""
         model = genai.GenerativeModel(GEMINI_MODEL)
         
         from config.settings import generate_with_retry
-        response = generate_with_retry(model, prompt)
-        text = response.text.strip()
         
-        # Clean markdown fences
-        text = re.sub(r'^```(?:json)?\s*', '', text)
-        text = re.sub(r'\s*```$', '', text)
+        scored_indices = set()
         
-        scores = json.loads(text)
-        for item in scores:
-            idx = item.get("index", -1)
-            score = item.get("score", 0)
-            if 0 <= idx < len(jobs):
-                jobs[idx]["match_score"] = score
+        # Process in batches if needed
+        for batch_start in range(0, len(job_summaries), BATCH_SIZE):
+            batch_end = min(batch_start + BATCH_SIZE, len(job_summaries))
+            batch_lines = job_summaries[batch_start:batch_end]
+            
+            if batch_start == 0:
+                # First batch: use full prompt
+                batch_prompt = prompt
+            else:
+                # Subsequent batches: lighter prompt with same candidate info
+                batch_prompt = f"""Score these jobs against the same candidate profile.
+CANDIDATE: {', '.join(user_roles)} | Skills: {', '.join(user_skills)} | {user_experience}
+
+JOBS:
+{chr(10).join(batch_lines)}
+
+Same scoring rubric (Skill overlap 40pts, Role relevance 30pts, Experience fit 30pts).
+Fresher candidate - penalize 3+ year requirements and Senior/Lead roles.
+Score each job INDIVIDUALLY with different scores.
+Return JSON array: [{{"index": {batch_start}, "score": 85}}, ...]"""
+
+            response = generate_with_retry(
+                model, 
+                batch_prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            text = response.text.strip()
+            
+            # Clean markdown fences
+            text = re.sub(r'^```(?:json)?\s*', '', text)
+            text = re.sub(r'\s*```$', '', text)
+            
+            scores = json.loads(text)
+            for item in scores:
+                idx = item.get("index", -1)
+                score = item.get("score", 0)
+                if 0 <= idx < len(ai_candidates):
+                    ai_candidates[idx]["match_score"] = score
+                    scored_indices.add(idx)
+            
+            if batch_end < len(job_summaries):
+                time.sleep(1)  # Respect rate limits between batches
+                
+        # Fallback for any job in the AI batch that Gemini missed
+        for i in range(len(ai_candidates)):
+            if i not in scored_indices:
+                ai_candidates[i]["match_score"] = ai_candidates[i]["_heuristic_score"]
+                
     except Exception as e:
         print(f"   ⚠️ AI scoring failed: {e}")
-        # Fallback: simple keyword-based scoring
-        for job in jobs:
-            overlap = len(set(s.lower() for s in job.get("skills", [])) & 
-                         set(s.lower() for s in user_skills))
-            job["match_score"] = min(overlap * 15, 100)
+        # Fallback: use heuristic scores for AI candidates
+        for job in ai_candidates:
+            job["match_score"] = job["_heuristic_score"]
+
+    # ── Step 3: Apply heuristic scores to remaining jobs ──
+    for job in jobs[ai_limit:]:
+        job["match_score"] = job["_heuristic_score"]
+
+    # Clean up internal key
+    for job in jobs:
+        job.pop("_heuristic_score", None)
 
     # Sort by match score
     jobs.sort(key=lambda x: x["match_score"], reverse=True)
@@ -553,11 +696,30 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
         print("   🧠 Scoring jobs with Gemini...")
         all_jobs = score_jobs_with_ai(all_jobs, top_n=50)
     
+    # Post-filter: Remove 0% matches and senior jobs for freshers
+    profile = load_master_profile()
+    exp_keyword = profile.get("personal", {}).get("experience_keyword", "").lower()
+    is_fresher = "fresher" in exp_keyword or "intern" in exp_keyword or "junior" in exp_keyword
+    senior_titles = {"senior", "sr", "sr.", "lead", "architect", "manager", "principal", "head", "staff", "director"}
+    
+    filtered_jobs = []
+    for job in all_jobs:
+        if job.get("match_score", 0) == 0:
+            continue
+            
+        title_lower = job.get("title", "").lower()
+        if is_fresher and any(word in title_lower.split() for word in senior_titles):
+            continue
+            
+        filtered_jobs.append(job)
+        
+    all_jobs = filtered_jobs
+
     # DB Save Logic
     if all_jobs:
         try:
             from database.models import save_hot_jobs
-            # Save only the top 10 best matches
+            # Save only the top 20 best matches
             save_hot_jobs(all_jobs[:20])
             print("   💾 Saved Top 20 jobs to database.")
         except Exception as e:

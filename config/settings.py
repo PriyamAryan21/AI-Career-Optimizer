@@ -88,7 +88,7 @@ def save_master_profile(data: dict) -> None:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
-def generate_with_retry(model, prompt, max_retries=4, initial_delay=15, backoff_factor=2):
+def generate_with_retry(model, prompt, max_retries=4, initial_delay=15, backoff_factor=2, **kwargs):
     """
     A robust wrapper for Gemini's generate_content with exponential backoff.
     It will wait 15s -> 30s -> 60s between failures before giving up.
@@ -97,7 +97,7 @@ def generate_with_retry(model, prompt, max_retries=4, initial_delay=15, backoff_
     
     for attempt in range(max_retries):
         try:
-            return model.generate_content(prompt)
+            return model.generate_content(prompt, **kwargs)
         except Exception as e:
             error_msg = str(e).lower()
             

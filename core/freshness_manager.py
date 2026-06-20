@@ -112,9 +112,9 @@ async def run_update_cycle():
             browser, context = await get_authenticated_context(p)
             page = await context.new_page()
 
-            # Navigate to profile
-            await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=20000)
-            await page.wait_for_timeout(3000)
+            # Navigate to profile with longer timeout for bot challenges
+            await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=45000)
+            await page.wait_for_timeout(25000)
 
             # 5a. Rotate headline
             print("   Updating headline...")
