@@ -8,7 +8,7 @@ async def scrape_and_save_analytics(page):
     """
     print("   Navigating to analytics homepage...")
     try:
-        await page.goto("https://www.naukri.com/mnjuser/homepage", wait_until="domcontentloaded", timeout=30000)
+        await page.goto("https://www.naukri.com/mnjuser/performance", wait_until="domcontentloaded", timeout=30000)
         await page.wait_for_timeout(5000)  # Wait for React widgets to mount
         
         text_content = await page.locator("body").inner_text()
@@ -19,13 +19,13 @@ async def scrape_and_save_analytics(page):
         profile_completeness = 0
         activity_level = "UNKNOWN"
         
-        # Example: "69Search appearances24Recruiter actions" or "69 Search appearances"
+        # Example: "69Search appearances24Recruiter actions"
         m1 = re.search(r'(\d+)\s*Search appearances(?! in last)', text_content, re.IGNORECASE)
         if m1:
             search_app_90d = int(m1.group(1))
             
         # Example: "0 Search appearances in last \n 7 Days"
-        m2 = re.search(r'(\d+)\s*Search appearances in last\s*7\s*Days', text_content, re.IGNORECASE)
+        m2 = re.search(r'(\d+)\s*Search appearances in last.*?7 Days', text_content, re.IGNORECASE | re.DOTALL)
         if m2:
             search_app_7d = int(m2.group(1))
             
@@ -34,8 +34,7 @@ async def scrape_and_save_analytics(page):
         if m3:
             recruiter_actions_90d = int(m3.group(1))
             
-        # Example: "Profile completeness 95%"
-        m4 = re.search(r'Profile completeness\s*(\d+)%', text_content, re.IGNORECASE)
+        m4 = re.search(r'Profile completeness\s*(\d+)%?', text_content, re.IGNORECASE)
         if m4:
             profile_completeness = int(m4.group(1))
             

@@ -126,7 +126,7 @@ def save_profile_metrics(search_appearances_90d=0, search_appearances_7d=0, recr
     # 2. Garbage Collection: Delete metrics older than 30 days to stay cleanly within the free tier!
     cur.execute(
         """DELETE FROM profile_metrics 
-           WHERE metric_date < CURRENT_DATE - INTERVAL '30 days'"""
+           WHERE CAST(metric_date AS DATE) < CURRENT_DATE - INTERVAL '30 days'"""
     )
     
     conn.commit()
