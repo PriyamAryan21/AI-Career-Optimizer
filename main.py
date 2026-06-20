@@ -33,10 +33,10 @@ def main():
         sys.exit(0 if result else 1)
 
     elif "--scrape" in args:
-        from intelligence.job_scraper import scrape_all_roles
-        data = scrape_all_roles()
-        for role, jobs in data.items():
-            print(f"  {role}: {len(jobs)} jobs")
+        from intelligence.job_feed import get_hot_job_feed
+        print("Fetching job market data from APIs...")
+        jobs = get_hot_job_feed(use_ai_scoring=False)
+        print(f"\nSuccessfully fetched {len(jobs)} jobs across all sources.")
 
     elif "--trends" in args:
         from intelligence.job_feed import get_hot_job_feed
