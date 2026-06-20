@@ -15,6 +15,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
+from playwright_stealth import stealth_async
 
 from config.settings import (
     NAUKRI_PROFILE_URL, UPDATE_FREQUENCY_DAYS, JITTER_HOURS
@@ -111,6 +112,7 @@ async def run_update_cycle():
         async with async_playwright() as p:
             browser, context = await get_authenticated_context(p)
             page = await context.new_page()
+            await stealth_async(page)
 
             # Navigate to profile with longer timeout for bot challenges
             await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=45000)

@@ -88,12 +88,16 @@ RULES:
 - Do NOT make it a bulleted list or a pipeline of skills. Write a cohesive 3-5 sentence paragraph.
 - Max length: 500 characters.
 - Do not hallucinate experiences that aren't implied by the base summary.
+- STRICTLY NO MARKDOWN. Return plain text only. Do NOT use **bold** or *italics*.
 
-Return ONLY the optimized paragraph text, nothing else."""
+Return ONLY the optimized paragraph text in plain string format, nothing else."""
 
     try:
         response = generate_with_retry(model, prompt)
         optimized_summary = response.text.strip().strip('"').strip("'")
+        
+        # Strip any markdown formatting (asterisks) just in case
+        optimized_summary = optimized_summary.replace("**", "").replace("*", "")
         
         if len(optimized_summary) > 50:
             print(f"   Generated AI Profile Summary: {optimized_summary[:60]}...")
