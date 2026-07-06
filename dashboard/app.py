@@ -854,7 +854,7 @@ def trigger_cycle():
     # Optional mode (full, gaps, jobs, scrape)
     mode = request.json.get("mode", "full") if request.is_json else "full"
 
-    if github_token and github_repo:
+    if github_token and github_repo and mode not in ["auto_apply", "social_scrape"]:
         import requests
         url = f"https://api.github.com/repos/{github_repo}/actions/workflows/career-optimizer.yml/dispatches"
         headers = {
@@ -870,7 +870,7 @@ def trigger_cycle():
             return jsonify({"error": f"GitHub API failed: {resp.text}"}), 500
             
     else:
-        # Local fallback
+        # Local fallback OR forced local modes
         if mode == "validate":
             import asyncio
             from core.auth import validate_session
@@ -899,6 +899,12 @@ def trigger_cycle():
                 elif mode == "jobs":
                     from intelligence.job_feed import get_hot_job_feed
                     get_hot_job_feed(use_ai_scoring=True)
+                elif mode == "social_scrape":
+                    from intelligence.social_scraper import scrape_social_posts
+                    scrape_social_posts()
+                elif mode == "auto_apply":
+                    from core.auto_applier import run_auto_apply_cycle
+                    run_auto_apply_cycle()
                 elif mode == "push":
                     from core.auth import get_authenticated_context
                     from playwright.async_api import async_playwright
@@ -966,6 +972,29 @@ def get_next_schedule():
             return jsonify({"next_run": next_run.isoformat() + "Z"})
         else:
             return jsonify({"next_run": None})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── API: Auto Apply Jobs ──────────────────────────────
+@app.route('/api/auto-apply/jobs')
+def get_verified_email_jobs():
+    """Return jobs from the verified_email_jobs table."""
+    try:
+        from database.models import _get_connection
+        conn = _get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM verified_email_jobs ORDER BY created_at DESC")
+        columns = [desc[0] for desc in cur.description]
+        jobs = []
+        for row in cur.fetchall():
+            job_dict = dict(zip(columns, row))
+            if isinstance(job_dict.get('created_at'), datetime):
+                job_dict['created_at'] = job_dict['created_at'].isoformat()
+            jobs.append(job_dict)
+        cur.close()
+        conn.close()
+        return jsonify(jobs)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1046,11 +1075,11 @@ if __name__ == '__main__':
     if '--dev' in sys.argv:
         # Development mode: Flask's built-in server with debug output
         print("🔧 Running in DEVELOPMENT mode (Flask debug server)")
-        app.run(debug=True, use_reloader=False, port=5000)
+        app.run(debug=True, use_reloader=False, port=5050)
     else:
         # Production mode: Waitress WSGI server
         from waitress import serve
         print("🚀 Running in PRODUCTION mode (Waitress)")
-        print("   Dashboard: http://localhost:5000")
-        serve(app, host='0.0.0.0', port=5000, threads=4)
+        print("   Dashboard: http://localhost:5050")
+        serve(app, host='0.0.0.0', port=5050, threads=4)
 

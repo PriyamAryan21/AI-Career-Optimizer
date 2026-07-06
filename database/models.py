@@ -313,6 +313,47 @@ def save_hot_jobs(jobs: list[dict]):
     cur.close()
     _release_connection(conn)
 
+def save_scraped_jobs(role: str, jobs: list[dict]):
+    """Save scraped raw jobs to the database."""
+    conn = _get_connection()
+    cur = conn.cursor()
+    
+    for job in jobs:
+        skills_str = ",".join(job.get("skills", []))
+        cur.execute(
+            """INSERT INTO scraped_jobs (title, company, location, apply_link, source, role, skills, scraped_date)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (
+                job.get("title", ""),
+                job.get("company", ""),
+                job.get("location", ""),
+                job.get("link", ""),
+                job.get("source", "Unknown"),
+                role,
+                skills_str,
+                datetime.now().strftime("%Y-%m-%d")
+            )
+        )
+    
+    conn.commit()
+    cur.close()
+    _release_connection(conn)
+
+def save_verified_email_job(title: str, company: str, email: str, description: str, source: str):
+    """Save a job that has a verified contact email for auto-applying."""
+    conn = _get_connection()
+    cur = conn.cursor()
+    # Check if already exists to avoid duplicate applications
+    cur.execute("SELECT id FROM verified_email_jobs WHERE verified_email = %s AND title = %s", (email, title))
+    if not cur.fetchone():
+        cur.execute(
+            """INSERT INTO verified_email_jobs (title, company, verified_email, description, source)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (title, company, email, description, source)
+        )
+        conn.commit()
+    cur.close()
+    _release_connection(conn)
 
 def get_session_status():
     from config.settings import fernet_cipher

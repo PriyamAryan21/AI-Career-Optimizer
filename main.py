@@ -54,6 +54,27 @@ def main():
         print(f"\nSuccessfully fetched {len(jobs)} jobs across all sources.")
         log_action("cli_trigger", "Executed raw scrape (--scrape)", details=f"Fetched {len(jobs)} jobs", status="success")
 
+    elif "--local-scrape" in args:
+        from database.models import log_action
+        from intelligence.job_scraper import scrape_all_roles
+        print("Running local browser scraper for Naukri, LinkedIn, and Indeed...")
+        results = scrape_all_roles()
+        total = sum(len(jobs) for jobs in results.values())
+        print(f"\nSuccessfully scraped and saved {total} jobs locally.")
+        log_action("cli_trigger", "Executed local browser scrape (--local-scrape)", details=f"Scraped {total} jobs", status="success")
+
+    elif "--auto-apply" in args:
+        from core.auto_applier import run_auto_apply_cycle
+        run_auto_apply_cycle()
+
+    elif "--social-scrape" in args:
+        from intelligence.social_scraper import scrape_social_posts
+        scrape_social_posts()
+
+    elif "--enrich" in args:
+        from intelligence.email_enricher import enrich_hot_jobs
+        enrich_hot_jobs()
+
     elif "--trends" in args:
         from database.models import log_action
         from intelligence.job_feed import fetch_jobs_by_role_api

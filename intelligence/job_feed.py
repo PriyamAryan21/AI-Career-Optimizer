@@ -232,12 +232,12 @@ def _format_jsearch_salary(result: dict) -> str:
 
 
 # ── Source 4: Naukri (from existing scraper data) ─────
-def fetch_naukri_cached() -> list[dict]:
+def fetch_scraped_cached() -> list[dict]:
     """
-    Load jobs from the last Naukri scrape stored in our database.
+    Load jobs from the last local scrape (Naukri, LinkedIn, Indeed) stored in our database.
     These come from intelligence/job_scraper.py runs.
     """
-    print("   📡 Loading cached Naukri data...")
+    print("   📡 Loading cached scraped jobs...")
     jobs = []
     try:
         from database.models import _get_connection
@@ -252,17 +252,17 @@ def fetch_naukri_cached() -> list[dict]:
         """)
         exists = cur.fetchone()[0]
         if not exists:
-            print("   ⏭️ Naukri: No scraped_jobs table (run scraper first)")
+            print("   ⏭️ Scraped Jobs: No scraped_jobs table (run scraper first)")
             cur.close()
             conn.close()
             return []
 
         cur.execute("""
-            SELECT title, company, location, apply_link, skills, scraped_date
+            SELECT title, company, location, apply_link, skills, source, scraped_date
             FROM scraped_jobs
             WHERE scraped_date >= %s
             ORDER BY scraped_date DESC
-            LIMIT 50
+            LIMIT 500
         """, ((datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),))
         
         columns = [desc[0] for desc in cur.description]
@@ -277,15 +277,15 @@ def fetch_naukri_cached() -> list[dict]:
                 company=r.get("company", ""),
                 location=r.get("location", "India"),
                 url=r.get("apply_link", ""),
-                source="Naukri",
+                source=r.get("source", "Scraped"),
                 skills=skill_list,
                 posted=str(r.get("scraped_date", "")),
             ))
         cur.close()
         conn.close()
-        print(f"   ✅ Naukri (cached): {len(jobs)} jobs")
+        print(f"   ✅ Scraped Jobs (cached): {len(jobs)} jobs")
     except Exception as e:
-        print(f"   ⚠️ Naukri cache failed: {e}")
+        print(f"   ⚠️ Scraped Jobs cache failed: {e}")
     return jobs
 
 
@@ -613,7 +613,8 @@ def fetch_all_api_jobs() -> list[dict]:
     all_jobs.extend(fetch_adzuna_jobs(limit=25))
     all_jobs.extend(fetch_jsearch_jobs(limit=10))
     all_jobs.extend(fetch_arbeitnow_jobs())
-    # We do NOT include fetch_naukri_cached() here to avoid circular logic
+    # Include locally scraped jobs so they are used for trends and gap analysis
+    all_jobs.extend(fetch_scraped_cached())
     return all_jobs
 
 
@@ -679,7 +680,6 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
     print("\n🔥 Building Hot Job Feed...")
     
     all_jobs = fetch_all_api_jobs()
-    all_jobs.extend(fetch_naukri_cached())
     
     print(f"\n   📊 Total raw jobs: {len(all_jobs)}")
     
@@ -694,7 +694,7 @@ def get_hot_job_feed(use_ai_scoring: bool = True) -> list[dict]:
     # Score with AI
     if use_ai_scoring and all_jobs:
         print("   🧠 Scoring jobs with Gemini...")
-        all_jobs = score_jobs_with_ai(all_jobs, top_n=50)
+        all_jobs = score_jobs_with_ai(all_jobs, top_n=75)
     
     # Post-filter: Remove 0% matches and senior jobs for freshers
     profile = load_master_profile()

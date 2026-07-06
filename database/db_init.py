@@ -27,6 +27,33 @@ def initialize_database():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scraped_jobs (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            location TEXT,
+            apply_link TEXT,
+            source TEXT,
+            role TEXT,
+            skills TEXT,
+            scraped_date DATE,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS verified_email_jobs (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            verified_email TEXT NOT NULL,
+            description TEXT,
+            source TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS trend_data (

@@ -12,7 +12,7 @@ import json
 import sys
 from datetime import datetime
 from playwright.async_api import async_playwright
-from database.models import log_action
+from database.models import log_action, save_scraped_jobs
 from config.settings import TARGET_ROLES
 
 
@@ -108,6 +108,100 @@ async def scrape_role_async(role: str, context, pages: int = 2) -> list[dict]:
     return all_jobs
 
 
+async def scrape_linkedin_role_async(role: str, context) -> list[dict]:
+    """Scrape job listings from LinkedIn Guest Search."""
+    all_jobs = []
+    print(f"  Scraping LinkedIn: {role}...")
+    page = await context.new_page()
+    query = role.replace(" ", "%20")
+    url = f"https://in.linkedin.com/jobs/search?keywords={query}&location=India&f_TPR=r604800"
+    
+    try:
+        await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+        await page.wait_for_timeout(3000)
+        
+        jobs = await page.evaluate("""() => {
+            const cards = document.querySelectorAll('ul.jobs-search__results-list li');
+            const results = [];
+            cards.forEach(card => {
+                try {
+                    const titleEl = card.querySelector('.base-search-card__title');
+                    const compEl = card.querySelector('.base-search-card__subtitle');
+                    const locEl = card.querySelector('.job-search-card__location');
+                    const linkEl = card.querySelector('a.base-card__full-link');
+                    const dateEl = card.querySelector('.job-search-card__listdate, .job-search-card__listdate--new');
+                    
+                    if (titleEl && compEl) {
+                        results.push({
+                            title: titleEl.textContent.trim(),
+                            company: compEl.textContent.trim(),
+                            location: locEl ? locEl.textContent.trim() : 'India',
+                            link: linkEl ? linkEl.href : '',
+                            source: 'LinkedIn',
+                            skills: [],
+                            posted: dateEl ? dateEl.textContent.trim() : ''
+                        });
+                    }
+                } catch(e) {}
+            });
+            return results;
+        }""")
+        all_jobs.extend(jobs)
+        print(f"   LinkedIn: {len(jobs)} jobs found")
+    except Exception as e:
+        print(f"   LinkedIn failed: {e}")
+    finally:
+        await page.close()
+    return all_jobs
+
+
+async def scrape_indeed_role_async(role: str, context) -> list[dict]:
+    """Scrape job listings from Indeed."""
+    all_jobs = []
+    print(f"  Scraping Indeed: {role}...")
+    page = await context.new_page()
+    query = role.replace(" ", "+")
+    url = f"https://in.indeed.com/jobs?q={query}&l=India"
+    
+    try:
+        await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+        await page.wait_for_timeout(3000)
+        
+        jobs = await page.evaluate("""() => {
+            const cards = document.querySelectorAll('.job_seen_beacon');
+            const results = [];
+            cards.forEach(card => {
+                try {
+                    const titleEl = card.querySelector('h2.jobTitle span[title], h2.jobTitle span');
+                    const compEl = card.querySelector('[data-testid="company-name"]');
+                    const locEl = card.querySelector('[data-testid="text-location"]');
+                    const linkEl = card.querySelector('h2.jobTitle a');
+                    const snippetEl = card.querySelector('.job-snippet');
+                    
+                    if (titleEl && compEl) {
+                        results.push({
+                            title: titleEl.textContent.trim(),
+                            company: compEl.textContent.trim(),
+                            location: locEl ? locEl.textContent.trim() : 'India',
+                            link: linkEl ? linkEl.href : '',
+                            source: 'Indeed',
+                            skills: [],
+                            description_snippet: snippetEl ? snippetEl.textContent.trim() : ''
+                        });
+                    }
+                } catch(e) {}
+            });
+            return results;
+        }""")
+        all_jobs.extend(jobs)
+        print(f"   Indeed: {len(jobs)} jobs found")
+    except Exception as e:
+        print(f"   Indeed failed: {e}")
+    finally:
+        await page.close()
+    return all_jobs
+
+
 async def scrape_all_roles_async(pages_per_role: int = 2) -> dict[str, list[dict]]:
     """Scrape job listings for ALL target roles using Playwright."""
     if not TARGET_ROLES:
@@ -135,9 +229,19 @@ async def scrape_all_roles_async(pages_per_role: int = 2) -> dict[str, list[dict
         """)
 
         for role in TARGET_ROLES:
-            jobs = await scrape_role_async(role, context, pages=pages_per_role)
-            results[role] = jobs
-            total += len(jobs)
+            naukri_jobs = await scrape_role_async(role, context, pages=pages_per_role)
+            for j in naukri_jobs:
+                j['source'] = 'Naukri'
+                
+            linkedin_jobs = await scrape_linkedin_role_async(role, context)
+            indeed_jobs = await scrape_indeed_role_async(role, context)
+            
+            combined_jobs = naukri_jobs + linkedin_jobs + indeed_jobs
+            
+            save_scraped_jobs(role, combined_jobs)
+            
+            results[role] = combined_jobs
+            total += len(combined_jobs)
             await asyncio.sleep(random.uniform(2, 5))
 
         await browser.close()
