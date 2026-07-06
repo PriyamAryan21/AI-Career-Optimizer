@@ -47,8 +47,13 @@ def scrape_hackernews_hiring():
                 clean_text = BeautifulSoup(text, "html.parser").get_text()
                 
                 # Check if it matches our target roles
-                is_relevant = any(role.lower().split()[0] in clean_text.lower() for role in TARGET_ROLES)
-                if not is_relevant:
+                matched_role = "Software Engineer (HN)"
+                for role in TARGET_ROLES:
+                    if role.lower().split()[0] in clean_text.lower():
+                        matched_role = f"{role} (HN)"
+                        break
+                
+                if matched_role == "Software Engineer (HN)":
                     continue
                     
                 emails = list(set(re.findall(email_pattern, clean_text)))
@@ -58,7 +63,7 @@ def scrape_hackernews_hiring():
                     company_line = clean_text.split('\n')[0][:50].replace('|', '').strip()
                     
                     save_verified_email_job(
-                        title="Software Engineer (HN)",
+                        title=matched_role,
                         company=company_line,
                         email=target_email,
                         description=f"HackerNews Thread {latest_thread_id}",
