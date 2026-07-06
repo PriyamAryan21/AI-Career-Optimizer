@@ -19,11 +19,19 @@ def main():
     args = sys.argv[1:]
 
     if not args:
-        # Default: run full update cycle
+        # Default: run AI cloud cycle
         from database.models import log_action
-        from core.freshness_manager import run
-        log_action("cli_trigger", "Executed full update cycle (--full)", status="success")
-        run()
+        from core.freshness_manager import run_ai_cycle_sync
+        log_action("cli_trigger", "Executed AI cloud cycle", status="success")
+        run_ai_cycle_sync()
+
+    elif "--full" in args:
+        print("Running complete pipeline locally...")
+        from database.models import log_action
+        from core.freshness_manager import run_ai_cycle_sync, run_naukri_push_sync
+        log_action("cli_trigger", "Executed full pipeline (--full)", status="success")
+        run_ai_cycle_sync()
+        run_naukri_push_sync()
 
     elif "--login" in args:
         from database.models import log_action
@@ -75,38 +83,12 @@ def main():
         else:
             log_action("cli_trigger", "Executed gap analysis (--gaps)", details="Failed to generate score", status="failed")
 
-    elif "--push" in args:
-        print("Testing Naukri upload (skipping scraper and AI)...")
+    elif "--push" in args or "--local-push" in args:
+        print("Running local Naukri push cycle...")
         from database.models import log_action
-        from core.auth import get_authenticated_context
-        from playwright.async_api import async_playwright
-        from core.headline_rotator import get_next_headline, update_headline_on_naukri
-        from core.resume_generator import upload_resume_to_naukri
-        from config.settings import OUTPUT_DIR, NAUKRI_PROFILE_URL
-
-        async def push_test():
-            async with async_playwright() as p:
-                browser, context = await get_authenticated_context(p)
-                try:
-                    page = await context.new_page()
-                    await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded")
-                    
-                    new_headline = get_next_headline(use_ai=False)
-                    await update_headline_on_naukri(page, new_headline)
-                    
-                    pdfs = list(OUTPUT_DIR.glob("*.pdf"))
-                    if pdfs:
-                        latest_pdf = max(pdfs, key=lambda x: x.stat().st_mtime)
-                        await upload_resume_to_naukri(page, str(latest_pdf))
-                        log_action("cli_trigger", "Executed Naukri push (--push)", details=f"Uploaded {latest_pdf.name}", status="success")
-                    else:
-                        print("No PDFs found in output/resumes/")
-                        log_action("cli_trigger", "Executed Naukri push (--push)", details="No PDFs found", status="failed")
-                except Exception as e:
-                    log_action("cli_trigger", "Executed Naukri push (--push)", details=f"Error: {e}", status="failed")
-                finally:
-                    await browser.close()
-        asyncio.run(push_test())
+        from core.freshness_manager import run_naukri_push_sync
+        log_action("cli_trigger", "Executed Naukri push (--push)", status="success")
+        run_naukri_push_sync()
 
     elif "--db-init" in args:
         from database.models import log_action

@@ -63,7 +63,9 @@ def get_next_headline(use_ai: bool = True) -> str:
 def pick_headline() -> str:
     """Fallback: returns the base summary directly from master_profile.yaml"""
     profile = load_master_profile()
-    return profile.get("personal", {}).get("summary", "Computer Science student with strong foundation in full-stack development.")
+    summary = profile.get("personal", {}).get("summary", "Computer Science student with strong foundation in full-stack development.")
+    # Strip any markdown from the YAML source
+    return re.sub(r'[*_`~]', '', summary)
 
 
 def generate_ai_headline() -> str:
@@ -96,8 +98,8 @@ Return ONLY the optimized paragraph text in plain string format, nothing else.""
         response = generate_with_retry(model, prompt)
         optimized_summary = response.text.strip().strip('"').strip("'")
         
-        # Strip any markdown formatting (asterisks) just in case
-        optimized_summary = optimized_summary.replace("**", "").replace("*", "")
+        # Strip any markdown formatting just in case
+        optimized_summary = re.sub(r'[*_`~]', '', optimized_summary)
         
         if len(optimized_summary) > 50:
             print(f"   Generated AI Profile Summary: {optimized_summary[:60]}...")

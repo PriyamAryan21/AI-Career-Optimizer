@@ -15,7 +15,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
+from playwright_stealth import Stealth
 
 from config.settings import (
     NAUKRI_PROFILE_URL, UPDATE_FREQUENCY_DAYS, JITTER_HOURS
@@ -33,31 +33,20 @@ from notifications.email_notifier import (
 )
 
 
-async def run_update_cycle():
+async def run_ai_cycle():
     """
-    Execute one full profile update cycle.
-    This is the main function called by the scheduler / GitHub Actions.
+    Execute the AI and API portions of the cycle.
+    Safe to run in GitHub Actions (no bot challenges).
     """
     print("=" * 60)
-    print(f"  AI Career Optimizer — Update Cycle")
+    print(f"  AI Career Optimizer — AI/Cloud Cycle")
     print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}")
     print("=" * 60)
 
     actions_taken = []
 
-    # ── Step 1: Validate Session ──────────────────────
-    print("\n[1/6] Validating Naukri session...")
-    is_auth = await ensure_authenticated()
-    if not is_auth:
-        print("Session expired. Email notification sent. Aborting cycle.")
-        log_action("update_cycle", "Aborted — session expired", status="failed")
-        return False
-
-    actions_taken.append("Session validated successfully")
-    print("   Session is active!")
-
-    # ── Step 2: Fetch Jobs & Analyze Trends ──────────
-    print("\n[2/6] Fetching job market data from APIs...")
+    # ── Step 1: Fetch Jobs & Analyze Trends ──────────
+    print("\n[1/4] Fetching job market data from APIs...")
     try:
         from intelligence.job_feed import fetch_jobs_by_role_api
         
@@ -68,7 +57,7 @@ async def run_update_cycle():
         actions_taken.append(f"Fetched {total_jobs} jobs via APIs")
 
         if total_jobs > 0:
-            print("\n[2b/6] Analyzing trends with Gemini...")
+            print("\n[1b/4] Analyzing trends with Gemini...")
             trends = analyze_trends(scraped_data)
             actions_taken.append(f"Identified skills from {total_jobs} jobs")
         else:
@@ -81,8 +70,8 @@ async def run_update_cycle():
         actions_taken.append(f"Job fetch failed: {str(e)[:100]}")
         trends = {}
 
-    # ── Step 3: Generate Optimized Content ────────────
-    print("\n[3/6] Generating AI-optimized content...")
+    # ── Step 2: Generate Optimized Content ────────────
+    print("\n[2/4] Generating AI-optimized content...")
     optimized_content = None
     try:
         optimized_content = generate_optimized_content()
@@ -94,8 +83,8 @@ async def run_update_cycle():
         print(f"   Content optimization failed: {e}")
         actions_taken.append("Content optimization failed (using raw profile)")
 
-    # ── Step 4: Generate Resume PDF ───────────────────
-    print("\n[4/6] Generating resume PDF...")
+    # ── Step 3: Generate Resume PDF ───────────────────
+    print("\n[3/4] Generating resume PDF...")
     pdf_path = None
     try:
         loop = asyncio.get_running_loop()
@@ -106,54 +95,8 @@ async def run_update_cycle():
         notify_error(str(e), "Resume Generation")
         actions_taken.append(f"Resume generation failed: {str(e)[:100]}")
 
-    # ── Step 5: Push Updates to Naukri ────────────────
-    print("\n[5/6] Pushing updates to Naukri...")
-    try:
-        async with async_playwright() as p:
-            browser, context = await get_authenticated_context(p)
-            page = await context.new_page()
-            await stealth_async(page)
-
-            # Navigate to profile with longer timeout for bot challenges
-            await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=45000)
-            await page.wait_for_timeout(25000)
-
-            # 5a. Rotate headline
-            print("   Updating headline...")
-            new_headline = get_next_headline(use_ai=True)
-            headline_ok = await update_headline_on_naukri(page, new_headline)
-            if headline_ok:
-                actions_taken.append(f"Headline rotated: {new_headline[:50]}")
-            else:
-                actions_taken.append("Headline rotation failed")
-
-            # 5b. Upload resume
-            if pdf_path:
-                print("   Uploading resume...")
-                resume_ok = await upload_resume_to_naukri(page, pdf_path)
-                if resume_ok:
-                    actions_taken.append("Resume uploaded to Naukri")
-                else:
-                    actions_taken.append("Resume upload failed")
-
-            # ── Step 6: Scrape Profile Analytics ──────────────
-            print("\n[6/7] Scraping profile performance analytics...")
-            from core.analytics_scraper import scrape_and_save_analytics
-            analytics_ok = await scrape_and_save_analytics(page)
-            if analytics_ok:
-                actions_taken.append("Scraped and saved profile analytics")
-            else:
-                actions_taken.append("Analytics scraping failed")
-
-            await browser.close()
-
-    except Exception as e:
-        print(f"   Naukri update/analytics failed: {e}")
-        notify_error(str(e), "Naukri Profile Update")
-        actions_taken.append(f"Naukri push failed: {str(e)[:100]}")
-
-    # ── Step 7: Gap Analysis & Notifications ──────────
-    print("\n[7/7] Running gap analysis & sending notifications...")
+    # ── Step 4: Gap Analysis & Notifications ──────────
+    print("\n[4/4] Running gap analysis & sending notifications...")
     try:
         gap_result = run_full_analysis()
         if gap_result and gap_result.get("suggestions"):
@@ -179,13 +122,13 @@ async def run_update_cycle():
 
     log_action(
         "update_cycle",
-        f"Cycle complete: {len(actions_taken)} actions",
+        f"Cloud Cycle complete: {len(actions_taken)} actions",
         details="\n".join(actions_taken),
         status="success"
     )
 
     print(f"\n{'='*60}")
-    print(f"  Cycle Complete!")
+    print(f"  Cloud Cycle Complete!")
     print(f"  Actions: {len(actions_taken)}")
     print(f"  Next run: {next_run_str}")
     print(f"{'='*60}")
@@ -195,13 +138,117 @@ async def run_update_cycle():
     return True
 
 
+async def run_local_naukri_update():
+    """
+    Execute the local Naukri push cycle.
+    This requires Playwright to run locally to avoid bot protections.
+    """
+    print("=" * 60)
+    print(f"  AI Career Optimizer — Local Naukri Push")
+    print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S IST')}")
+    print("=" * 60)
+
+    actions_taken = []
+
+    # ── Step 1: Validate Session ──────────────────────
+    print("\n[1/3] Validating Naukri session...")
+    is_auth = await ensure_authenticated()
+    if not is_auth:
+        print("Session expired. Email notification sent. Aborting cycle.")
+        log_action("naukri_push", "Aborted — session expired", status="failed")
+        return False
+
+    actions_taken.append("Session validated successfully")
+    print("   Session is active!")
+
+    # ── Step 2: Push Updates to Naukri ────────────────
+    print("\n[2/3] Pushing updates to Naukri...")
+    try:
+        from config.settings import OUTPUT_DIR
+        async with async_playwright() as p:
+            browser, context = await get_authenticated_context(p)
+            page = await context.new_page()
+            await Stealth().apply_stealth_async(page)
+
+            # Navigate to profile with longer timeout for bot challenges
+            await page.goto(NAUKRI_PROFILE_URL, wait_until="domcontentloaded", timeout=45000)
+            await page.wait_for_timeout(25000)
+
+            # Rotate headline
+            print("   Updating headline...")
+            new_headline = get_next_headline(use_ai=True)
+            headline_ok = await update_headline_on_naukri(page, new_headline)
+            if headline_ok:
+                actions_taken.append(f"Headline rotated: {new_headline[:50]}")
+            else:
+                actions_taken.append("Headline rotation failed")
+
+            # Upload resume
+            print("   Finding latest resume...")
+            pdfs = list(OUTPUT_DIR.glob("*.pdf"))
+            if pdfs:
+                latest_pdf = max(pdfs, key=lambda x: x.stat().st_mtime)
+                print(f"   Uploading resume: {latest_pdf.name}...")
+                resume_ok = await upload_resume_to_naukri(page, str(latest_pdf))
+                if resume_ok:
+                    actions_taken.append("Resume uploaded to Naukri")
+                else:
+                    actions_taken.append("Resume upload failed")
+            else:
+                print("   No PDFs found in output/resumes/")
+                actions_taken.append("No resume to upload")
+
+            # ── Step 3: Scrape Profile Analytics ──────────────
+            print("\n[3/3] Scraping profile performance analytics...")
+            from core.analytics_scraper import scrape_and_save_analytics
+            analytics_ok = await scrape_and_save_analytics(page)
+            if analytics_ok:
+                actions_taken.append("Scraped and saved profile analytics")
+            else:
+                actions_taken.append("Analytics scraping failed")
+
+            await browser.close()
+
+    except Exception as e:
+        print(f"   Naukri update/analytics failed: {e}")
+        notify_error(str(e), "Naukri Profile Update")
+        actions_taken.append(f"Naukri push failed: {str(e)[:100]}")
+
+    log_action(
+        "naukri_push",
+        f"Local cycle complete: {len(actions_taken)} actions",
+        details="\n".join(actions_taken),
+        status="success"
+    )
+
+    print(f"\n{'='*60}")
+    print(f"  Local Naukri Push Complete!")
+    print(f"  Actions: {len(actions_taken)}")
+    print(f"{'='*60}")
+    for a in actions_taken:
+        print(f"   - {a}")
+
+    return True
+
+
+def run_ai_cycle_sync():
+    """Sync entry point for the AI cloud cycle."""
+    asyncio.run(run_ai_cycle())
+
+def run_naukri_push_sync():
+    """Sync entry point for the local Naukri push."""
+    asyncio.run(run_local_naukri_update())
+
 def run():
-    """Sync entry point for the update cycle."""
-    asyncio.run(run_update_cycle())
+    """Backwards compatible entry point (runs AI cycle)."""
+    run_ai_cycle_sync()
 
 
 # ── CLI ────────────────────────────────────────────────
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding='utf-8')
-    run()
+    if "--local-push" in sys.argv:
+        run_naukri_push_sync()
+    else:
+        run_ai_cycle_sync()
