@@ -20,6 +20,8 @@ on:
           - gaps        # Run gap analysis only
           - scrape      # Scrape jobs only
           - trends      # Scrape and analyze trends
+          - social_scrape # Scrape social platforms for emails
+          - auto_apply    # Trigger auto application cycle
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -86,6 +88,10 @@ jobs:
             python main.py --scrape
           elif [ "$MODE" = "trends" ]; then
             python main.py --trends
+          elif [ "$MODE" = "social_scrape" ]; then
+            python main.py --social-scrape
+          elif [ "$MODE" = "auto_apply" ]; then
+            python main.py --auto-apply
           fi
 
       - name: Upload Generated Resumes
